@@ -29,6 +29,13 @@ function toggleDie(index) {
 window.gameToggleDie = toggleDie
 
 /**
+ * 等待动画完成
+ */
+function waitForAnimation(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+/**
  * 开始游戏
  */
 function startGame() {
@@ -38,9 +45,9 @@ function startGame() {
 }
 
 /**
- * 继续摇
+ * 继续摇 - 带动画控制
  */
-function rollAgain() {
+async function rollAgain() {
   if (gameState.gamePhase !== 'selecting') return
   if (selectedDiceIndices.length === 0) {
     gameState.message = '必须至少选择1个骰子才能继续摇'
@@ -48,8 +55,22 @@ function rollAgain() {
     return
   }
 
+  // 第一阶段：显示动画状态
+  gameState.isRolling = true
+  window.UI.updateUI(gameState, selectedDiceIndices)
+
+  // 等待动画开始
+  await waitForAnimation(100)
+
+  // 第二阶段：执行游戏逻辑并更新UI
   gameState = window.GameLogic.rollAgain(gameState, selectedDiceIndices)
   selectedDiceIndices = []
+
+  // 等待动画完成
+  await waitForAnimation(800)
+
+  // 第三阶段：清除动画状态
+  gameState.isRolling = false
   window.UI.updateUI(gameState, selectedDiceIndices)
 }
 
