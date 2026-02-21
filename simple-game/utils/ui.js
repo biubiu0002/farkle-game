@@ -31,8 +31,13 @@ function getPipLayout(value) {
  * @returns {HTMLElement} - 3D骰子DOM元素
  */
 function create3DDie(value, index) {
+  // 外层容器用于动画（摇晃、滚动、弹跳）
   const container = document.createElement('div')
   container.className = 'die-3d-container'
+
+  // 动画包装器，用于应用动画而不影响骰子旋转
+  const animationWrapper = document.createElement('div')
+  animationWrapper.className = 'die-animation-wrapper'
 
   const die = document.createElement('div')
   die.className = 'die-3d'
@@ -77,7 +82,9 @@ function create3DDie(value, index) {
     die.appendChild(face)
   })
 
-  container.appendChild(die)
+  // 组装DOM结构：container > animationWrapper > die
+  animationWrapper.appendChild(die)
+  container.appendChild(animationWrapper)
   return container
 }
 
@@ -236,6 +243,7 @@ function renderDice(containerId, dice, isHeld, selectedDiceIndices) {
   dice.forEach((dieObj) => {
     const die3D = create3DDie(dieObj.value, dieObj.index)
     const dieElement = die3D.querySelector('.die-3d')
+    const animationWrapper = die3D.querySelector('.die-animation-wrapper')
 
     // 添加选中/保留状态
     if (isHeld) {
@@ -244,7 +252,7 @@ function renderDice(containerId, dice, isHeld, selectedDiceIndices) {
     } else if (selectedDiceIndices.includes(dieObj.index)) {
       dieElement.classList.add('selected')
       dieElement.style.filter = 'brightness(1.2) saturate(1.2)'
-      // 在容器上应用位移，不影响骰子的旋转
+      // 在包装器上应用位移，不影响骰子的旋转
       die3D.style.transform = 'translateY(-10px)'
     }
 

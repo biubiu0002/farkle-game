@@ -67,32 +67,32 @@ async function rollAgain() {
   // 播放摇骰子音效
   if (window.SoundManager) window.SoundManager.playRollSound()
 
-  // 获取所有骰子元素
-  const diceElements = document.querySelectorAll('.dice-row .die-3d')
+  // 获取所有骰子动画包装器元素
+  const animationWrappers = document.querySelectorAll('.dice-row .die-animation-wrapper')
 
   // 阶段1: 摇晃动画
-  diceElements.forEach(die => {
-    die.classList.add('shaking')
+  animationWrappers.forEach(wrapper => {
+    wrapper.classList.add('shaking')
   })
   await waitForAnimation(200)
 
   // 阶段2: 滚动动画
-  diceElements.forEach(die => {
-    die.classList.remove('shaking')
-    die.classList.add('rolling')
+  animationWrappers.forEach(wrapper => {
+    wrapper.classList.remove('shaking')
+    wrapper.classList.add('rolling')
   })
   await waitForAnimation(400)
 
   // 阶段3: 弹跳动画
-  diceElements.forEach(die => {
-    die.classList.remove('rolling')
-    die.classList.add('bouncing')
+  animationWrappers.forEach(wrapper => {
+    wrapper.classList.remove('rolling')
+    wrapper.classList.add('bouncing')
   })
   await waitForAnimation(200)
 
   // 移除所有动画类
-  diceElements.forEach(die => {
-    die.classList.remove('bouncing')
+  animationWrappers.forEach(wrapper => {
+    wrapper.classList.remove('bouncing')
   })
 
   // 更新游戏状态

@@ -374,6 +374,14 @@ body {
   perspective: 800px;
   width: 80px;
   height: 80px;
+  transition: transform 0.2s;
+}
+
+/* 动画包装器 - 用于应用摇晃、滚动、弹跳动画 */
+.die-animation-wrapper {
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
 }
 
 /* 3D骰子主体 */
@@ -455,14 +463,14 @@ body {
 }
 
 /* 动画状态类 */
-.die-3d.shaking {
+.die-animation-wrapper.shaking {
   animation: shake 0.2s ease-in-out;
 }
 
-.die-3d.rolling {
+.die-animation-wrapper.rolling {
   animation: roll 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.die-3d.bouncing {
+.die-animation-wrapper.bouncing {
   animation: bounce 0.2s ease-in-out;
 }
