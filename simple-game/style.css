@@ -217,47 +217,62 @@ body {
 
 .btn {
   padding: 15px 40px;
-  border-radius: 50px;
+  border-radius: 12px;
   font-size: 16px;
   font-weight: bold;
-  border: none;
+  border: 2px solid #4e342e;
   cursor: pointer;
   transition: all 0.2s;
   min-width: 150px;
+  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
+  color: #fff8e1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  box-shadow:
+    0 4px 0 #4e342e,
+    0 6px 12px rgba(0,0,0,0.3);
 }
 
 .btn:active {
-  transform: scale(0.95);
+  transform: translateY(2px);
+  box-shadow:
+    0 2px 0 #4e342e,
+    0 3px 6px rgba(0,0,0,0.3);
 }
 
 .btn-primary {
-  background: #667eea;
-  color: white;
+  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
+  color: #fff8e1;
+  border-color: #4e342e;
 }
 
 .btn-secondary {
-  background: #6b7280;
-  color: white;
+  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
+  color: #fff8e1;
+  border-color: #4e342e;
 }
 
 .btn-info {
-  background: #3b82f6;
-  color: white;
+  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
+  color: #fff8e1;
+  border-color: #4e342e;
 }
 
 .btn-success {
-  background: #10b981;
-  color: white;
+  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
+  color: #fff8e1;
+  border-color: #4e342e;
 }
 
 .btn-warning {
-  background: #f59e0b;
-  color: white;
+  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
+  color: #fff8e1;
+  border-color: #4e342e;
 }
 
 .btn-danger {
-  background: #ef4444;
-  color: white;
+  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
+  color: #fff8e1;
+  border-color: #4e342e;
 }
 
 .btn:disabled {
