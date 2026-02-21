@@ -426,3 +426,43 @@ body {
 .die-face.left   { transform: rotateY(-90deg) translateZ(40px); }
 .die-face.top    { transform: rotateX(90deg) translateZ(40px); }
 .die-face.bottom { transform: rotateX(-90deg) translateZ(40px); }
+
+/* 摇晃动画 - 准备阶段 */
+@keyframes shake {
+  0%, 100% { transform: rotateX(0deg) rotateY(0deg) translateX(0); }
+  25% { transform: rotateX(2deg) rotateY(2deg) translateX(2px); }
+  50% { transform: rotateX(-2deg) rotateY(-2deg) translateX(-2px); }
+  75% { transform: rotateX(2deg) rotateY(-2deg) translateX(2px); }
+}
+
+/* 滚动动画 - 投掷阶段 */
+@keyframes roll {
+  0% {
+    transform: rotate3d(1,1,1,0deg) translateY(0);
+  }
+  50% {
+    transform: rotate3d(1,1,1,720deg) translateY(-80px);
+  }
+  100% {
+    transform: rotate3d(1,1,1,1440deg) translateY(0);
+  }
+}
+
+/* 弹跳动画 - 落地阶段 */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+/* 动画状态类 */
+.die-3d.shaking {
+  animation: shake 0.2s ease-in-out;
+}
+
+.die-3d.rolling {
+  animation: roll 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.die-3d.bouncing {
+  animation: bounce 0.2s ease-in-out;
+}
