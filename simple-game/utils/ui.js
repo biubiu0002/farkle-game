@@ -241,7 +241,9 @@ function renderDice(containerId, dice, isHeld, selectedDiceIndices) {
 }
 
 // 导出为模块
+console.log('UI module: exporting functions...')
 if (typeof module !== 'undefined' && module.exports) {
+  console.log('UI module: using CommonJS')
   module.exports = {
     updateUI,
     renderDice,
@@ -249,10 +251,12 @@ if (typeof module !== 'undefined' && module.exports) {
     create3DDie
   }
 } else {
+  console.log('UI module: using window.UI')
   window.UI = {
     updateUI,
     renderDice,
     getPipLayout,
     create3DDie
   }
+  console.log('UI module: window.UI =', window.UI)
 }
