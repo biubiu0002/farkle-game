@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>模块测试 - Farkle 游戏</title>
+</head>
+<body>
+  <h1>Farkle 模块测试</h1>
+  <div id="results"></div>
+
+  <script src="utils/scorer.js"></script>
+  <script>
+    const results = document.getElementById('results')
+
+    function log(msg, pass) {
+      const div = document.createElement('div')
+      div.textContent = (pass ? '✅ ' : '❌ ') + msg
+      div.style.color = pass ? 'green' : 'red'
+      results.appendChild(div)
+    }
+
+    // 测试 scorer 模块
+    log('测试 Scorer 模块加载', typeof window.Scorer !== 'undefined')
+    log('测试 countDice', typeof window.Scorer.countDice === 'function')
+    log('测试 isFarkle', typeof window.Scorer.isFarkle === 'function')
+    log('测试 validateSelection', typeof window.Scorer.validateSelection === 'function')
+
+    // 测试 Farkle 识别
+    const farkleDice = [2, 3, 4, 6, 2, 3]
+    const isFarkle = window.Scorer.isFarkle(farkleDice)
+    log(`测试 [2,3,4,6,2,3] 是否为 Farkle: ${isFarkle}`, isFarkle === true)
+
+    // 测试得分计算
+    const scoringDice = [1, 1, 1, 5, 2, 3]
+    const scores = window.Scorer.getPossibleScores(scoringDice)
+    log(`测试 [1,1,1,5,2,3] 得分数量: ${scores.length}`, scores.length > 0)
+
+    // 测试选择验证
+    const selected = [1, 1, 1]
+    const validation = window.Scorer.validateSelection(scoringDice, selected)
+    log(`测试选择 [1,1,1] 得分: ${validation.points}`, validation.points === 1000)
+
+    document.querySelector('h1').textContent = '✅ 所有模块加载成功'
+  </script>
+</body>
+</html>

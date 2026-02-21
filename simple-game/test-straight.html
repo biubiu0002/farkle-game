@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>测试顺子计分</title>
+</head>
+<body>
+  <h1>顺子计分测试</h1>
+  <div id="results"></div>
+
+  <script src="utils/scorer.js"></script>
+  <script>
+    const results = document.getElementById('results')
+
+    function test(name, dice, selected, expectedValid, expectedPoints) {
+      const result = window.Scorer.validateSelection(dice, selected)
+      const passed = result.valid === expectedValid &&
+                     (!expectedValid || result.points === expectedPoints)
+
+      const status = passed ? '✅ PASS' : '❌ FAIL'
+      const details = `
+        <div style="margin: 10px 0; padding: 10px; background: ${passed ? '#e8f5e9' : '#ffebee'}; border-radius: 4px;">
+          <strong>${status}</strong> ${name}<br>
+          摇出: [${dice.join(', ')}]<br>
+          选中: [${selected.join(', ')}]<br>
+          期望: ${expectedValid ? '有效, ' + expectedPoints + '分' : '无效'}<br>
+          实际: ${result.valid ? '有效, ' + result.points + '分 - ' + result.description : '无效 - ' + result.description}
+        </div>
+      `
+      results.innerHTML += details
+    }
+
+    // 测试用例
+    test(
+      '顺子2-6 + 一个5',
+      [5, 4, 2, 3, 6, 5],  // 摇出的骰子
+      [2, 3, 4, 5, 6, 5],  // 选中的骰子（包含顺子2-6 + 额外的5）
+      true,               // 期望有效
+      650                 // 期望分数：600（顺子）+ 50（额外的5）
+    )
+
+    test(
+      '顺子1-5 + 一个1',
+      [1, 2, 3, 4, 5, 1],
+      [1, 2, 3, 4, 5, 1],
+      true,
+      600  // 500（顺子）+ 100（额外的1）
+    )
+
+    test(
+      '纯顺子2-6',
+      [2, 3, 4, 5, 6, 1],
+      [2, 3, 4, 5, 6],
+      true,
+      600
+    )
+
+    test(
+      '纯顺子1-5',
+      [1, 2, 3, 4, 5, 6],
+      [1, 2, 3, 4, 5],
+      true,
+      500
+    )
+
+    test(
+      '顺子2-6 + 两个5',
+      [2, 3, 4, 5, 5, 6],
+      [2, 3, 4, 5, 5, 6],
+      true,
+      700  // 600（顺子）+ 50 + 50（两个额外的5）
+    )
+
+    test(
+      '顺子2-6 + 无法计分的骰子',
+      [2, 3, 4, 5, 6, 2],
+      [2, 3, 4, 5, 6, 2],
+      false,
+      0  // 额外的2无法计分
+    )
+  </script>
+</body>
+</html>
