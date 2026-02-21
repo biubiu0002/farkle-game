@@ -48,6 +48,10 @@ function waitForAnimation(ms) {
  * 开始游戏
  */
 function startGame() {
+  if (!window.UI || !window.UI.updateUI) {
+    console.error('UI module not available')
+    return
+  }
   gameState = window.GameLogic.startGame(gameState)
   selectedDiceIndices = []
   window.UI.updateUI(gameState, selectedDiceIndices)
@@ -200,7 +204,12 @@ function toggleMute() {
  */
 function init() {
   initEventListeners()
-  window.UI.updateUI(gameState, selectedDiceIndices)
+  // 确保 UI 已加载
+  if (window.UI && window.UI.updateUI) {
+    window.UI.updateUI(gameState, selectedDiceIndices)
+  } else {
+    console.error('UI module not loaded')
+  }
 }
 
 // 页面加载完成后初始化
