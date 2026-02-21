@@ -250,11 +250,15 @@ function renderDice(containerId, dice, isHeld, selectedDiceIndices) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     updateUI,
-    renderDice
+    renderDice,
+    getPipLayout,
+    create3DDie
   }
 } else {
   window.UI = {
     updateUI,
-    renderDice
+    renderDice,
+    getPipLayout,
+    create3DDie
   }
 }
