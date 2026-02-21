@@ -109,8 +109,15 @@ function rollAgain(state, selectedIndices) {
   // 摇新骰子
   const newDice = rollDice(diceToRoll)
 
+  // 调试信息
+  console.log('🎲 新摇出的骰子:', newDice)
+  const farkleCheck = window.Scorer.isFarkle(newDice)
+  console.log('🔍 isFarkle结果:', farkleCheck)
+  const possibleScores = window.Scorer.getPossibleScores(newDice)
+  console.log('📊 getPossibleScores返回:', possibleScores)
+
   // 检查新摇出的骰子是否 Farkle
-  if (window.Scorer.isFarkle(newDice)) {
+  if (farkleCheck) {
     const rolledDiceWithIndex = newDice.map((value, idx) => ({
       value,
       index: state.rolledDice.length + idx

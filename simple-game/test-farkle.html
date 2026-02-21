@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Farkle</title>
+</head>
+<body>
+  <h1>Farkle 测试</h1>
+  <div id="output"></div>
+
+  <script src="utils/scorer.js"></script>
+  <script>
+    const testDice = [6, 6, 3, 4, 4, 2];
+    const output = document.getElementById('output');
+
+    output.innerHTML += `<h2>测试骰子: ${testDice.join(', ')}</h2>`;
+
+    const scores = window.Scorer.getPossibleScores(testDice);
+    output.innerHTML += `<h3>getPossibleScores 返回 ${scores.length} 个结果:</h3>`;
+    scores.forEach(s => {
+      output.innerHTML += `<p>${s.description} - ${s.points}分 - 使用骰子: ${s.diceUsed.join(', ')}</p>`;
+    });
+
+    const isFarkle = window.Scorer.isFarkle(testDice);
+    output.innerHTML += `<h3>isFarkle: ${isFarkle}</h3>`;
+
+    output.innerHTML += `<p>${isFarkle ? '✅ 正确：判定为Farkle' : '❌ 错误：应该判定为Farkle但没判定'}</p>`;
+  </script>
+</body>
+</html>
