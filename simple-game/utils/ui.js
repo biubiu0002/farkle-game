@@ -223,26 +223,33 @@ function renderDice(containerId, dice, isHeld, selectedDiceIndices) {
 
   container.innerHTML = ''
 
-  dice.forEach((dieObj, index) => {
-    const die = document.createElement('div')
-    die.className = 'die'
-    die.textContent = dieObj.value
+  dice.forEach((dieObj) => {
+    const die3D = create3DDie(dieObj.value, dieObj.index)
+    const dieElement = die3D.querySelector('.die-3d')
 
+    // 添加选中/保留状态
     if (isHeld) {
-      die.classList.add('held')
+      dieElement.classList.add('held')
+      dieElement.style.filter = 'brightness(0.7) opacity(0.8)'
     } else if (selectedDiceIndices.includes(dieObj.index)) {
-      die.classList.add('selected')
+      dieElement.classList.add('selected')
+      dieElement.style.filter = 'brightness(1.2) saturate(1.2)'
+      dieElement.style.transform += ' translateY(-10px)'
     }
 
+    // 添加点击事件
     if (!isHeld) {
-      die.addEventListener('click', () => {
+      dieElement.style.cursor = 'pointer'
+      dieElement.addEventListener('click', () => {
         if (window.gameToggleDie) {
           window.gameToggleDie(dieObj.index)
         }
       })
+    } else {
+      dieElement.style.cursor = 'default'
     }
 
-    container.appendChild(die)
+    container.appendChild(die3D)
   })
 }
 
