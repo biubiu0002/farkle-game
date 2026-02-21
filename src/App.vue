@@ -1,37 +1,21 @@
 <template>
   <view class="app">
-    <view class="status-bar"></view>
-    <router-view />
+    <index-page />
   </view>
 </template>
 
 <script setup lang="ts">
-import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
-
-onLaunch(() => {
-  console.log('App Launch')
-})
-
-onShow(() => {
-  console.log('App Show')
-})
-
-onHide(() => {
-  console.log('App Hide')
-})
+import IndexPage from './pages/index/index.vue'
 </script>
 
 <style>
+/* 全局样式 */
 page {
-  height: 100%;
-  background-color: #667eea;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .app {
-  height: 100%;
-}
-
-.status-bar {
-  height: var(--status-bar-height);
+  min-height: 100vh;
 }
 </style>
