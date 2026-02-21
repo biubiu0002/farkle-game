@@ -240,37 +240,37 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
+  background: linear-gradient(180deg, #7e57c2 0%, #5e35b1 100%);
   color: #fff8e1;
   border-color: #4e342e;
 }
 
 .btn-secondary {
-  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
+  background: linear-gradient(180deg, #78909c 0%, #546e7a 100%);
   color: #fff8e1;
   border-color: #4e342e;
 }
 
 .btn-info {
-  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
+  background: linear-gradient(180deg, #42a5f5 0%, #1976d2 100%);
   color: #fff8e1;
   border-color: #4e342e;
 }
 
 .btn-success {
-  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
+  background: linear-gradient(180deg, #66bb6a 0%, #388e3c 100%);
   color: #fff8e1;
   border-color: #4e342e;
 }
 
 .btn-warning {
-  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
+  background: linear-gradient(180deg, #ffa726 0%, #f57c00 100%);
   color: #fff8e1;
   border-color: #4e342e;
 }
 
 .btn-danger {
-  background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
+  background: linear-gradient(180deg, #ef5350 0%, #d32f2f 100%);
   color: #fff8e1;
   border-color: #4e342e;
 }
