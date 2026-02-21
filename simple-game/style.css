@@ -169,44 +169,6 @@ body {
   justify-content: center;
 }
 
-.die {
-  width: 70px;
-  height: 70px;
-  border-radius: 12px;
-  background: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  font-weight: bold;
-  color: #1f2937;
-}
-
-.die.selected {
-  background: #10b981;
-  color: white;
-  transform: translateY(-8px);
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
-}
-
-.die.held {
-  background: #667eea;
-  color: white;
-  cursor: default;
-}
-
-.die:active {
-  transform: scale(0.95);
-}
-
-.die.selected:active {
-  transform: translateY(-8px) scale(0.95);
-}
-
 /* 控制按钮 */
 .controls {
   display: flex;
