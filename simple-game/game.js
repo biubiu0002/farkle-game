@@ -55,22 +55,37 @@ async function rollAgain() {
     return
   }
 
-  // 第一阶段：显示动画状态
-  gameState.isRolling = true
-  window.UI.updateUI(gameState, selectedDiceIndices)
+  // 获取所有骰子元素
+  const diceElements = document.querySelectorAll('.dice-row .die-3d')
 
-  // 等待动画开始
-  await waitForAnimation(100)
+  // 阶段1: 摇晃动画
+  diceElements.forEach(die => {
+    die.classList.add('shaking')
+  })
+  await waitForAnimation(200)
 
-  // 第二阶段：执行游戏逻辑并更新UI
+  // 阶段2: 滚动动画
+  diceElements.forEach(die => {
+    die.classList.remove('shaking')
+    die.classList.add('rolling')
+  })
+  await waitForAnimation(400)
+
+  // 阶段3: 弹跳动画
+  diceElements.forEach(die => {
+    die.classList.remove('rolling')
+    die.classList.add('bouncing')
+  })
+  await waitForAnimation(200)
+
+  // 移除所有动画类
+  diceElements.forEach(die => {
+    die.classList.remove('bouncing')
+  })
+
+  // 更新游戏状态
   gameState = window.GameLogic.rollAgain(gameState, selectedDiceIndices)
   selectedDiceIndices = []
-
-  // 等待动画完成
-  await waitForAnimation(800)
-
-  // 第三阶段：清除动画状态
-  gameState.isRolling = false
   window.UI.updateUI(gameState, selectedDiceIndices)
 }
 
