@@ -1,11 +1,16 @@
 // src/types/game.ts
 
 /**
+ * 骰子值类型（1-6）
+ */
+export type DieValue = 1 | 2 | 3 | 4 | 5 | 6
+
+/**
  * 骰子接口
  */
 export interface Die {
   index: number          // 骰子索引（0-5）
-  value: number          // 骰子点数（1-6）
+  value: DieValue        // 骰子点数（1-6）
   held: boolean          // 是否已保留
 }
 

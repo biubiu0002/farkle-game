@@ -1,53 +1,32 @@
 /**
- * Farkle 游戏核心逻辑
+ * Farkle 游戏逻辑模块
+ * 游戏状态管理，无 DOM 操作
  */
 
-import { DieValue, getPossibleScores, isFarkle, validateSelection } from './scorer'
+import type { GameState, Die, DieValue } from '@/types/game'
+import { isFarkle, validateSelection, getPossibleScores } from './scorer'
 
-export type PlayerId = 0 | 1
-
-export interface Player {
-  id: PlayerId
-  name: string
-  bankedScore: number
-}
-
-export interface GameState {
-  players: Player[]
-  currentPlayer: PlayerId
-  gamePhase: 'waiting' | 'rolling' | 'selecting' | 'farkle' | 'gameOver'
-  dice: DieValue[]
-  heldDice: DieValue[]
-  remainingDice: DieValue[]
-  currentRoundScore: number
-  isHotDice: boolean
-  winner: PlayerId | null
-  message: string
-}
-
-export interface GameAction {
-  type: 'START_GAME' | 'ROLL_DICE' | 'HOLD_DICE' | 'BANK' | 'RESET_TURN' | 'NEW_GAME'
-  payload?: any
-}
-
-const WINNING_SCORE = 10000
+/**
+ * 获胜所需分数
+ */
+export const WINNING_SCORE = 10000
 
 /**
  * 创建初始游戏状态
+ * @returns 初始游戏状态
  */
 export function createInitialState(): GameState {
   return {
     players: [
-      { id: 0, name: '玩家1', bankedScore: 0 },
-      { id: 1, name: '玩家2', bankedScore: 0 }
+      { id: 0, name: '玩家1', bankedScore: 0, lastRoundScore: 0 },
+      { id: 1, name: '玩家2', bankedScore: 0, lastRoundScore: 0 }
     ],
     currentPlayer: 0,
     gamePhase: 'waiting',
-    dice: [],
+    rolledDice: [],
     heldDice: [],
-    remainingDice: [],
+    unheldDice: [],
     currentRoundScore: 0,
-    isHotDice: false,
     winner: null,
     message: '点击"开始游戏"'
   }
@@ -55,235 +34,307 @@ export function createInitialState(): GameState {
 
 /**
  * 生成随机骰子
+ * @param count - 要生成的骰子数量
+ * @returns 骰子值数组
  */
 export function rollDice(count: number): DieValue[] {
-  return Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1 as DieValue)
+  const dice: DieValue[] = []
+  for (let i = 0; i < count; i++) {
+    dice.push((Math.floor(Math.random() * 6) + 1) as DieValue)
+  }
+  return dice
+}
+
+/**
+ * 创建带索引的骰子对象数组
+ * @param values - 骰子值数组
+ * @param startIndex - 起始索引
+ * @returns 带索引的骰子对象数组
+ */
+function createDiceWithIndex(values: DieValue[], startIndex: number): Die[] {
+  return values.map((value, idx) => ({
+    value,
+    index: startIndex + idx,
+    held: false
+  }))
 }
 
 /**
  * 开始游戏
+ * @param state - 当前游戏状态
+ * @returns 新的游戏状态
  */
 export function startGame(state: GameState): GameState {
-  return {
-    ...state,
-    gamePhase: 'rolling',
-    message: '玩家1，点击"掷骰子"开始'
-  }
-}
+  const rawDice = rollDice(6)
+  const rolledDiceWithIndex = createDiceWithIndex(rawDice, 0)
 
-/**
- * 掷骰子
- */
-export function rollDiceAction(state: GameState): GameState {
-  if (state.gamePhase !== 'rolling') {
-    return state
-  }
-
-  // 第一次掷骰子或 Hot Dice（剩余为0）用6个，否则用剩余骰子
-  const diceToRoll = state.heldDice.length === 0 || state.remainingDice.length === 0 ? 6 : state.remainingDice.length
-  const newDice = rollDice(diceToRoll)
-
-  // 检查是否Farkle
-  if (isFarkle(newDice)) {
+  // 检查初始骰子是否是 Farkle
+  if (isFarkle(rawDice)) {
     return {
       ...state,
-      dice: newDice,
+      rolledDice: rolledDiceWithIndex,
+      unheldDice: rolledDiceWithIndex,
       heldDice: [],
-      remainingDice: newDice,
       currentRoundScore: 0,
-      isHotDice: false,
       gamePhase: 'farkle',
-      message: `${state.players[state.currentPlayer].name} Farkle了！失去未存分数，轮到下一位`
+      message: `${state.players[state.currentPlayer].name} 初始摇骰子 Farkle！骰子 ${rawDice.join(', ')} 无法计分`
     }
   }
 
-  // Hot Dice检查（如果骰子全部可以计分）
-  const possibleScores = getPossibleScores(newDice)
-  const totalDiceInScores = possibleScores.reduce((max, curr) =>
-    curr.diceUsed.length > max ? curr.diceUsed.length : max, 0)
-
-  const isHotDice = totalDiceInScores === newDice.length
-
   return {
     ...state,
-    dice: newDice,
+    rolledDice: rolledDiceWithIndex,
+    unheldDice: rolledDiceWithIndex,
     heldDice: [],
-    remainingDice: newDice,
-    isHotDice,
+    currentRoundScore: 0,
     gamePhase: 'selecting',
-    message: `选择要保留的骰子${isHotDice ? '（Hot Dice！全部可用）' : ''}`
+    message: '选择要保留的骰子（至少选1个）'
   }
 }
 
 /**
- * 保留骰子
+ * 继续摇（保留骰子后摇剩余骰子）
+ * @param state - 当前游戏状态
+ * @param selectedIndices - 选中的骰子索引数组
+ * @returns 新的游戏状态
  */
-export function holdDice(state: GameState, diceToHold: DieValue[]): GameState {
-  if (state.gamePhase !== 'selecting') {
-    return state
-  }
+export function rollAgain(state: GameState, selectedIndices: number[]): GameState {
+  // 获取选中的骰子值
+  const selectedValues = selectedIndices.map(index => {
+    const die = state.unheldDice.find(d => d.index === index)
+    if (!die) {
+      throw new Error(`骰子索引 ${index} 未找到`)
+    }
+    return die.value as DieValue
+  })
 
-  // 验证选择
-  const validation = validateSelection(state.dice, diceToHold)
+  const allDiceValues = state.rolledDice.map(d => d.value as DieValue)
+  const validation = validateSelection(allDiceValues, selectedValues)
+
   if (!validation.valid) {
     return {
       ...state,
-      message: '无效的选择！请选择可计分的骰子'
+      message: validation.description || '无效的选择！请选择可计分的骰子'
     }
   }
 
-  // 检查骰子是否足够（不能选择超出可用数量的骰子）
-  const diceCounts: { [key: number]: number } = {}
-  state.dice.forEach(d => diceCounts[d] = (diceCounts[d] || 0) + 1)
-  
-  // 统计已保留的骰子
-  const heldCounts: { [key: number]: number } = {}
-  state.heldDice.forEach(d => heldCounts[d] = (heldCounts[d] || 0) + 1)
-  
-  // 统计要保留的骰子
-  const toHoldCounts: { [key: number]: number } = {}
-  diceToHold.forEach(d => toHoldCounts[d] = (toHoldCounts[d] || 0) + 1)
-  
-  // 验证：已保留 + 要保留 <= 可用骰子
-  for (const [value, count] of Object.entries(toHoldCounts)) {
-    const v = parseInt(value) as DieValue
-    const available = diceCounts[v] - (heldCounts[v] || 0)
-    if (count > available) {
-      return {
-        ...state,
-        message: `选择了过多的骰子 ${v}！`
-      }
-    }
-  }
-
-  // 计算新分数
+  // 计算新的得分
   const newRoundScore = state.currentRoundScore + validation.points
+
+  // 更新上轮得分为本次选中的骰子得分
+  const updatedPlayers = [...state.players]
+  updatedPlayers[state.currentPlayer] = {
+    ...updatedPlayers[state.currentPlayer],
+    lastRoundScore: validation.points
+  }
+
+  // 获取要保留的骰子对象
+  const diceToHold = selectedIndices
+    .map(index => state.unheldDice.find(d => d.index === index))
+    .filter((die): die is Die => die !== undefined)
+
   const newHeldDice = [...state.heldDice, ...diceToHold]
 
-  // 计算剩余骰子（从当前剩余骰子中移除要保留的骰子）
-  const usedDice = [...diceToHold]
-  const newRemainingDice = state.remainingDice.filter(d => {
-    const idx = usedDice.indexOf(d)
-    if (idx > -1) {
-      usedDice.splice(idx, 1)
-      return false
+  // 计算要摇的骰子数量
+  const unselectedDice = state.unheldDice.filter(d => !selectedIndices.includes(d.index))
+  const diceToRoll = unselectedDice.length === 0 ? 6 : unselectedDice.length
+
+  // 摇新骰子
+  const newDice = rollDice(diceToRoll)
+
+  // 检查新摇出的骰子是否 Farkle
+  if (isFarkle(newDice)) {
+    const rolledDiceWithIndex = createDiceWithIndex(newDice, state.rolledDice.length)
+
+    return {
+      ...state,
+      players: updatedPlayers,
+      rolledDice: rolledDiceWithIndex,
+      heldDice: [],
+      unheldDice: rolledDiceWithIndex,
+      currentRoundScore: 0,
+      gamePhase: 'farkle',
+      message: `${state.players[state.currentPlayer].name} Farkle了！新摇出的骰子 ${newDice.join(', ')} 无法计分，本轮得分清空`
     }
-    return true
-  })
-
-  // 检查是否所有骰子都被使用（Hot Dice可以重置）
-  const canRollAgain = newRemainingDice.length === 0 || state.isHotDice
-
-  return {
-    ...state,
-    heldDice: newHeldDice,
-    remainingDice: newRemainingDice,
-    currentRoundScore: newRoundScore,
-    gamePhase: canRollAgain ? 'rolling' : 'selecting',
-    message: `本轮得分：${newRoundScore}${canRollAgain ? '，可以继续掷' : '，继续选择或存分'}`
   }
+
+  // 正常：更新游戏状态
+  const isHotDiceTurn = unselectedDice.length === 0
+  const startIndex = isHotDiceTurn ? state.rolledDice.length : state.rolledDice.length + newHeldDice.length
+  const rolledDiceWithIndex = createDiceWithIndex(newDice, startIndex)
+
+  let newState: GameState = {
+    ...state,
+    players: updatedPlayers,
+    currentRoundScore: newRoundScore,
+    gamePhase: 'selecting'
+  }
+
+  if (isHotDiceTurn) {
+    // Hot Dice：所有骰子都能计分，重置并摇6个新骰子
+    newState.rolledDice = rolledDiceWithIndex
+    newState.heldDice = []
+    newState.unheldDice = rolledDiceWithIndex
+  } else {
+    // 普通情况：保留已选骰子，添加新骰子
+    newState.rolledDice = [...newHeldDice, ...rolledDiceWithIndex]
+    newState.heldDice = newHeldDice
+    newState.unheldDice = rolledDiceWithIndex
+  }
+
+  // 检查新骰子是否全部能计分
+  const newDiceScores = getPossibleScores(newDice)
+  const maxDiceUsed = newDiceScores.length > 0 ? Math.max(...newDiceScores.map(s => s.diceUsed.length)) : 0
+  const isAllScorable = newDiceScores.length > 0 && maxDiceUsed === newDice.length
+
+  if (isAllScorable) {
+    const bestScore = newDiceScores[0]
+    newState.message = `Hot Dice！${bestScore.description}`
+  } else {
+    newState.message = '选择要保留的骰子（至少选1个）'
+  }
+
+  return newState
 }
 
 /**
- * 存分
+ * 结束回合
+ * @param state - 当前游戏状态
+ * @param selectedIndices - 选中的骰子索引数组（可选）
+ * @returns 新的游戏状态
  */
-export function bankScore(state: GameState): GameState {
-  if (state.gamePhase !== 'selecting' || state.currentRoundScore === 0) {
-    return state
+export function endTurn(state: GameState, selectedIndices: number[]): GameState {
+  let totalScore = state.currentRoundScore
+
+  // 如果有选中的骰子，需要先保留它们
+  if (selectedIndices.length > 0) {
+    const selectedValues = selectedIndices.map(index => {
+      const die = state.rolledDice.find(d => d.index === index)
+      if (!die) {
+        throw new Error(`骰子索引 ${index} 未找到`)
+      }
+      return die.value as DieValue
+    })
+
+    const allDiceValues = state.rolledDice.map(d => d.value as DieValue)
+    const validation = validateSelection(allDiceValues, selectedValues)
+
+    if (!validation.valid) {
+      return {
+        ...state,
+        message: validation.description || '无效的选择！请选择可计分的骰子'
+      }
+    }
+
+    totalScore = state.currentRoundScore + validation.points
+  }
+
+  // 如果总分为0，不能结束回合
+  if (totalScore === 0) {
+    return {
+      ...state,
+      message: '必须选择骰子并保留后才能结束回合'
+    }
   }
 
   const currentPlayer = state.players[state.currentPlayer]
-  const newScore = currentPlayer.bankedScore + state.currentRoundScore
+  const newScore = currentPlayer.bankedScore + totalScore
 
   // 检查是否获胜
   if (newScore >= WINNING_SCORE) {
+    const updatedPlayers = [...state.players]
+    updatedPlayers[state.currentPlayer] = {
+      ...currentPlayer,
+      bankedScore: newScore
+    }
+
     return {
       ...state,
-      players: state.players.map((p, idx) =>
-        idx === state.currentPlayer
-          ? { ...p, bankedScore: newScore }
-          : p
-      ),
+      players: updatedPlayers,
       winner: state.currentPlayer,
       gamePhase: 'gameOver',
       message: `${currentPlayer.name} 获胜！总分：${newScore}`
     }
   }
 
-  // 切换玩家
-  const nextPlayer = (state.currentPlayer + 1) as PlayerId
+  // 切换到下一个玩家
+  const previousPlayer = state.currentPlayer
+  const nextPlayer = (state.currentPlayer + 1) % 2
+
+  const updatedPlayers = [...state.players]
+  updatedPlayers[previousPlayer] = {
+    ...currentPlayer,
+    bankedScore: newScore,
+    lastRoundScore: 0 // 清空上轮得分
+  }
+
+  // 为新玩家摇骰子
+  const rawDice = rollDice(6)
+  const rolledDiceWithIndex = createDiceWithIndex(rawDice, 0)
 
   return {
     ...state,
-    players: state.players.map((p, idx) =>
-      idx === state.currentPlayer
-        ? { ...p, bankedScore: newScore }
-        : p
-    ),
+    players: updatedPlayers,
     currentPlayer: nextPlayer,
-    gamePhase: 'rolling',
-    dice: [],
+    gamePhase: 'selecting',
+    rolledDice: rolledDiceWithIndex,
     heldDice: [],
-    remainingDice: [],
+    unheldDice: rolledDiceWithIndex,
     currentRoundScore: 0,
-    isHotDice: false,
-    message: `${state.players[nextPlayer].name}，点击"掷骰子"`
+    message: '选择要保留的骰子（至少选1个）'
   }
 }
 
 /**
- * 处理Farkle后切换玩家
+ * Farkle后切换玩家
+ * @param state - 当前游戏状态
+ * @returns 新的游戏状态
  */
 export function switchPlayerAfterFarkle(state: GameState): GameState {
-  const nextPlayer = (state.currentPlayer + 1) as PlayerId
+  // Farkle：上轮得分为0
+  const currentPlayer = state.players[state.currentPlayer]
+  const updatedPlayers = [...state.players]
+  updatedPlayers[state.currentPlayer] = {
+    ...currentPlayer,
+    lastRoundScore: 0
+  }
+
+  const nextPlayer = (state.currentPlayer + 1) % 2
+  const rawDice = rollDice(6)
+  const rolledDiceWithIndex = createDiceWithIndex(rawDice, 0)
+
+  // 检查新玩家是否也 Farkle
+  if (isFarkle(rawDice)) {
+    return {
+      ...state,
+      players: updatedPlayers,
+      currentPlayer: nextPlayer,
+      rolledDice: rolledDiceWithIndex,
+      heldDice: [],
+      unheldDice: rolledDiceWithIndex,
+      currentRoundScore: 0,
+      gamePhase: 'farkle',
+      message: `${state.players[nextPlayer].name} 初始摇骰子也 Farkle！骰子 ${rawDice.join(', ')} 无法计分`
+    }
+  }
 
   return {
     ...state,
+    players: updatedPlayers,
     currentPlayer: nextPlayer,
-    gamePhase: 'rolling',
-    dice: [],
+    rolledDice: rolledDiceWithIndex,
     heldDice: [],
-    remainingDice: [],
+    unheldDice: rolledDiceWithIndex,
     currentRoundScore: 0,
-    isHotDice: false,
-    message: `${state.players[nextPlayer].name}，点击"掷骰子"`
+    gamePhase: 'selecting',
+    message: '选择要保留的骰子（至少选1个）'
   }
 }
 
 /**
  * 新游戏
+ * @returns 新的游戏状态
  */
-export function newGame(state: GameState): GameState {
-  return {
-    ...createInitialState(),
-    message: '点击"开始游戏"'
-  }
-}
-
-/**
- * 游戏状态机
- */
-export function gameReducer(state: GameState, action: GameAction): GameState {
-  switch (action.type) {
-    case 'START_GAME':
-      return startGame(state)
-
-    case 'ROLL_DICE':
-      return rollDiceAction(state)
-
-    case 'HOLD_DICE':
-      return holdDice(state, action.payload)
-
-    case 'BANK':
-      return bankScore(state)
-
-    case 'RESET_TURN':
-      return switchPlayerAfterFarkle(state)
-
-    case 'NEW_GAME':
-      return newGame(state)
-
-    default:
-      return state
-  }
+export function newGame(): GameState {
+  return createInitialState()
 }
