@@ -247,16 +247,14 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     updateUI,
     renderDice,
-    getPipLayout,
-    create3DDie
+    getPipLayout
   }
 } else {
   console.log('UI module: using window.UI')
   window.UI = {
     updateUI,
     renderDice,
-    getPipLayout,
-    create3DDie
+    getPipLayout
   }
   console.log('UI module: window.UI =', window.UI)
 }
