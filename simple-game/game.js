@@ -9,6 +9,13 @@ console.log('Farkle游戏已加载 - 版本 v6.0 - 模块化重构')
 let gameState = window.GameLogic.createInitialState()
 let selectedDiceIndices = []
 
+// 初始化音效管理器
+async function initSoundManager() {
+  if (window.SoundManager && !window.SoundManager.isInitialized) {
+    await window.SoundManager.init()
+  }
+}
+
 /**
  * 切换骰子选中状态
  */
@@ -18,8 +25,10 @@ function toggleDie(index) {
   const idx = selectedDiceIndices.indexOf(index)
   if (idx > -1) {
     selectedDiceIndices.splice(idx, 1)
+    if (window.SoundManager) window.SoundManager.playDeselectSound()
   } else {
     selectedDiceIndices.push(index)
+    if (window.SoundManager) window.SoundManager.playSelectSound()
   }
 
   window.UI.updateUI(gameState, selectedDiceIndices)
@@ -54,6 +63,9 @@ async function rollAgain() {
     window.UI.updateUI(gameState, selectedDiceIndices)
     return
   }
+
+  // 播放摇骰子音效
+  if (window.SoundManager) window.SoundManager.playRollSound()
 
   // 获取所有骰子元素
   const diceElements = document.querySelectorAll('.dice-row .die-3d')
@@ -112,6 +124,9 @@ function endTurn() {
     }
 
     totalScore = gameState.currentRoundScore + validation.points
+
+    // 播放得分音效
+    if (window.SoundManager) window.SoundManager.playScoreSound()
   }
 
   // 如果总分为0，不能结束回合
@@ -120,6 +135,9 @@ function endTurn() {
     window.UI.updateUI(gameState, selectedDiceIndices)
     return
   }
+
+  // 播放存分音效
+  if (window.SoundManager) window.SoundManager.playBankSound()
 
   gameState = window.GameLogic.endTurn(gameState, selectedDiceIndices)
   selectedDiceIndices = []
@@ -131,6 +149,9 @@ function endTurn() {
  */
 function switchPlayer() {
   if (gameState.gamePhase !== 'farkle') return
+
+  // 播放Farkle音效
+  if (window.SoundManager) window.SoundManager.playFarkleSound()
 
   gameState = window.GameLogic.switchPlayerAfterFarkle(gameState)
   selectedDiceIndices = []
@@ -157,12 +178,30 @@ function showRules() {
  * 初始化事件监听
  */
 function initEventListeners() {
-  document.getElementById('btnStart').addEventListener('click', startGame)
+  document.getElementById('btnStart').addEventListener('click', () => {
+    initSoundManager().then(startGame)
+  })
   document.getElementById('btnRollAgain').addEventListener('click', rollAgain)
   document.getElementById('btnEndTurn').addEventListener('click', endTurn)
   document.getElementById('btnNext').addEventListener('click', switchPlayer)
-  document.getElementById('btnNewGame').addEventListener('click', newGame)
+  document.getElementById('btnNewGame').addEventListener('click', () => {
+    initSoundManager().then(newGame)
+  })
   document.getElementById('btnRules').addEventListener('click', showRules)
+  document.getElementById('btnMute').addEventListener('click', toggleMute)
+}
+
+/**
+ * 切换静音状态
+ */
+function toggleMute() {
+  if (window.SoundManager) {
+    const btnMute = document.getElementById('btnMute')
+    const isMuted = !window.SoundManager.enabled
+
+    window.SoundManager.setEnabled(!isMuted)
+    btnMute.textContent = isMuted ? '🔇' : '🔊'
+  }
 }
 
 /**
