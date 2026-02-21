@@ -30,61 +30,20 @@ function getPipLayout(value) {
  * @param {number} index - 骰子索引
  * @returns {HTMLElement} - 3D骰子DOM元素
  */
-function create3DDie(value, index) {
-  // 外层容器用于动画（摇晃、滚动、弹跳）
+function create2DDie(value, index) {
+  // 简化版2D骰子 - 使用图片方式
   const container = document.createElement('div')
-  container.className = 'die-3d-container'
-
-  // 动画包装器，用于应用动画而不影响骰子旋转
-  const animationWrapper = document.createElement('div')
-  animationWrapper.className = 'die-animation-wrapper'
+  container.className = 'die-2d-container'
 
   const die = document.createElement('div')
-  die.className = 'die-3d'
+  die.className = 'die-2d'
   die.dataset.value = value
   die.dataset.index = index
 
-  // 根据 value 旋转骰子显示对应面
-  const rotations = {
-    1: 'rotateX(0deg) rotateY(0deg)',      // front
-    2: 'rotateX(0deg) rotateY(-90deg)',    // left
-    3: 'rotateX(0deg) rotateY(90deg)',     // right
-    4: 'rotateX(-90deg) rotateY(0deg)',    // top
-    5: 'rotateX(90deg) rotateY(0deg)',     // bottom
-    6: 'rotateX(180deg) rotateY(0deg)'     // back
-  }
-  die.style.transform = rotations[value] || rotations[1]
+  // 使用背景图片或CSS绘制点数
+  die.textContent = value
 
-  // 创建6个面，每个面显示1点
-  const faces = ['front', 'back', 'right', 'left', 'top', 'bottom']
-  const faceValues = [1, 6, 3, 2, 4, 5] // 每个面对应的数值
-
-  faces.forEach((faceName, i) => {
-    const face = document.createElement('div')
-    face.className = `die-face ${faceName}`
-
-    const pipsContainer = document.createElement('div')
-    pipsContainer.className = 'die-pips'
-
-    const layout = getPipLayout(faceValues[i])
-    layout.forEach(hasPip => {
-      const pip = document.createElement('div')
-      pip.className = 'pip'
-      if (hasPip) {
-        pip.style.visibility = 'visible'
-      } else {
-        pip.style.visibility = 'hidden'
-      }
-      pipsContainer.appendChild(pip)
-    })
-
-    face.appendChild(pipsContainer)
-    die.appendChild(face)
-  })
-
-  // 组装DOM结构：container > animationWrapper > die
-  animationWrapper.appendChild(die)
-  container.appendChild(animationWrapper)
+  container.appendChild(die)
   return container
 }
 
@@ -241,34 +200,43 @@ function renderDice(containerId, dice, isHeld, selectedDiceIndices) {
   container.innerHTML = ''
 
   dice.forEach((dieObj) => {
-    const die3D = create3DDie(dieObj.value, dieObj.index)
-    const dieElement = die3D.querySelector('.die-3d')
-    const animationWrapper = die3D.querySelector('.die-animation-wrapper')
+    const dieContainer = document.createElement('div')
+    dieContainer.className = 'die'
+
+    // 点数容器
+    const pipsContainer = document.createElement('div')
+    pipsContainer.className = 'die-pips-2d'
+
+    // 获取点数布局
+    const layout = getPipLayout(dieObj.value)
+    layout.forEach(hasPip => {
+      const pip = document.createElement('div')
+      pip.className = 'pip-2d'
+      if (hasPip) {
+        pip.classList.add('visible')
+      }
+      pipsContainer.appendChild(pip)
+    })
+
+    dieContainer.appendChild(pipsContainer)
 
     // 添加选中/保留状态
     if (isHeld) {
-      dieElement.classList.add('held')
-      dieElement.style.filter = 'brightness(0.7) opacity(0.8)'
+      dieContainer.classList.add('held')
     } else if (selectedDiceIndices.includes(dieObj.index)) {
-      dieElement.classList.add('selected')
-      dieElement.style.filter = 'brightness(1.2) saturate(1.2)'
-      // 使用margin而不是transform来避免破坏perspective
-      die3D.style.marginTop = '-10px'
+      dieContainer.classList.add('selected')
     }
 
     // 添加点击事件
     if (!isHeld) {
-      dieElement.style.cursor = 'pointer'
-      dieElement.addEventListener('click', () => {
+      dieContainer.addEventListener('click', () => {
         if (window.gameToggleDie) {
           window.gameToggleDie(dieObj.index)
         }
       })
-    } else {
-      dieElement.style.cursor = 'default'
     }
 
-    container.appendChild(die3D)
+    container.appendChild(dieContainer)
   })
 }
 

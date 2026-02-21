@@ -54,7 +54,7 @@ function startGame() {
 }
 
 /**
- * 继续摇 - 带动画控制
+ * 继续摇 - 简化版
  */
 async function rollAgain() {
   if (gameState.gamePhase !== 'selecting') return
@@ -67,32 +67,23 @@ async function rollAgain() {
   // 播放摇骰子音效
   if (window.SoundManager) window.SoundManager.playRollSound()
 
-  // 获取所有骰子动画包装器元素
-  const animationWrappers = document.querySelectorAll('.dice-row .die-animation-wrapper')
+  // 简单的缩放动画
+  const diceElements = document.querySelectorAll('.dice-row .die')
 
-  // 阶段1: 摇晃动画
-  animationWrappers.forEach(wrapper => {
-    wrapper.classList.add('shaking')
+  diceElements.forEach(die => {
+    die.style.transform = 'scale(0.8)'
   })
-  await waitForAnimation(200)
 
-  // 阶段2: 滚动动画
-  animationWrappers.forEach(wrapper => {
-    wrapper.classList.remove('shaking')
-    wrapper.classList.add('rolling')
+  await waitForAnimation(150)
+
+  diceElements.forEach(die => {
+    die.style.transform = 'scale(1.1)'
   })
-  await waitForAnimation(400)
 
-  // 阶段3: 弹跳动画
-  animationWrappers.forEach(wrapper => {
-    wrapper.classList.remove('rolling')
-    wrapper.classList.add('bouncing')
-  })
-  await waitForAnimation(200)
+  await waitForAnimation(150)
 
-  // 移除所有动画类
-  animationWrappers.forEach(wrapper => {
-    wrapper.classList.remove('bouncing')
+  diceElements.forEach(die => {
+    die.style.transform = 'scale(1)'
   })
 
   // 更新游戏状态
