@@ -3,15 +3,16 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "Farkle 骰子游戏"
+        "navigationBarTitleText": "Farkle 游戏",
+        "navigationStyle": "custom"
       }
     }
   ],
   "globalStyle": {
-    "navigationBarTextStyle": "white",
+    "navigationBarTextStyle": "black",
     "navigationBarTitleText": "Farkle",
-    "navigationBarBackgroundColor": "#667eea",
-    "backgroundColor": "#667eea"
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f9fafb"
   },
   "uniIdRouter": {}
 }
