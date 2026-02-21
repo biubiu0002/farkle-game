@@ -215,6 +215,16 @@ function updateUI(gameState, selectedDiceIndices) {
     btnRollAgain.disabled = true
     btnRollAgain.textContent = '继续摇'
   }
+
+  // 检查游戏是否结束并播放胜利音效
+  if (gameState.gamePhase === 'gameOver' && window.SoundManager) {
+    const winner = gameState.players.find(p => p.bankedScore >= 10000)
+    if (winner) {
+      setTimeout(() => {
+        window.SoundManager.playWinSound()
+      }, 500)
+    }
+  }
 }
 
 function renderDice(containerId, dice, isHeld, selectedDiceIndices) {
@@ -234,7 +244,8 @@ function renderDice(containerId, dice, isHeld, selectedDiceIndices) {
     } else if (selectedDiceIndices.includes(dieObj.index)) {
       dieElement.classList.add('selected')
       dieElement.style.filter = 'brightness(1.2) saturate(1.2)'
-      dieElement.style.transform += ' translateY(-10px)'
+      // 在容器上应用位移，不影响骰子的旋转
+      die3D.style.transform = 'translateY(-10px)'
     }
 
     // 添加点击事件
