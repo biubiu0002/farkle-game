@@ -252,8 +252,8 @@ function renderDice(containerId, dice, isHeld, selectedDiceIndices) {
     } else if (selectedDiceIndices.includes(dieObj.index)) {
       dieElement.classList.add('selected')
       dieElement.style.filter = 'brightness(1.2) saturate(1.2)'
-      // 在包装器上应用位移，不影响骰子的旋转
-      die3D.style.transform = 'translateY(-10px)'
+      // 使用margin而不是transform来避免破坏perspective
+      die3D.style.marginTop = '-10px'
     }
 
     // 添加点击事件
