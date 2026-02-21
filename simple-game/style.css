@@ -373,15 +373,13 @@ body {
   width: 70px;
   height: 70px;
   border-radius: 12px;
-  background: white;
+  background: #f3f4f6;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border: 2px solid #a67c52;
+  display: inline-block;
 }
 
 .die.selected {
