@@ -379,6 +379,13 @@ class SoundManager {
   }
 
   /**
+   * 获取当前音量
+   */
+  getVolume() {
+    return this.volume
+  }
+
+  /**
    * 销毁音频上下文
    */
   destroy() {
