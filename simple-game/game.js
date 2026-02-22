@@ -526,29 +526,72 @@ function showRules() {
 }
 
 /**
- * 初始化事件监听
+ * 关闭规则
  */
-function initEventListeners() {
-  document.getElementById('btnStart').addEventListener('click', () => {
-    startGame()
-  })
-  document.getElementById('btnRollAgain').addEventListener('click', rollAgain)
-  document.getElementById('btnEndTurn').addEventListener('click', endTurn)
-  document.getElementById('btnNext').addEventListener('click', switchPlayer)
-  document.getElementById('btnNewGame').addEventListener('click', newGame)
-  document.getElementById('btnRules').addEventListener('click', showRules)
+function closeRules() {
+  document.getElementById('rulesModal').classList.remove('show')
 }
 
 /**
- * 切换静音状态
+ * 显示游戏选项
  */
-function toggleMute() {
-  if (window.SoundManager) {
-    const btnMute = document.getElementById('btnMute')
-    const isMuted = !window.SoundManager.enabled
+function showGameOptions() {
+  document.getElementById('gameOptionsModal').classList.add('show')
+}
 
-    window.SoundManager.setEnabled(!isMuted)
-    btnMute.textContent = isMuted ? '🔇' : '🔊'
+/**
+ * 开始游戏（从选项界面）
+ */
+function startGameFromOptions() {
+  // 获取选择的胜利分数
+  const selectedScore = document.querySelector('input[name="winningScore"]:checked')
+  if (!selectedScore) {
+    alert('请选择一个胜利分数！')
+    return
+  }
+
+  const winningScore = parseInt(selectedScore.value)
+
+  // 隐藏选项模态框
+  document.getElementById('gameOptionsModal').classList.remove('show')
+
+  // 设置胜利分数
+  window.WINNING_SCORE = winningScore
+  console.log(`胜利分数设置为: ${winningScore}`)
+
+  // 开始游戏
+  startGame()
+}
+
+/**
+ * 初始化游戏
+ */
+async function init() {
+  // 立即初始化音频系统（不等待游戏开始）
+  await initSoundManager()
+
+  // 显示游戏选项
+  showGameOptions()
+
+  // 绑定按钮事件
+  document.getElementById('btnStartGame').addEventListener('click', startGameFromOptions)
+  document.getElementById('btnCloseRules').addEventListener('click', closeRules)
+
+  // 其他按钮
+  document.getElementById('btnRollAgain').addEventListener('click', rollAgain)
+  document.getElementById('btnEndTurn').addEventListener('click', endTurn)
+  document.getElementById('btnNext').addEventListener('click', switchPlayer)
+  document.getElementById('btnNewGame').addEventListener('click', () => {
+    // 游戏结束后，显示选项界面重新开始
+    showGameOptions()
+  })
+  document.getElementById('btnRules').addEventListener('click', showRules)
+
+  // 确保 UI 已加载
+  if (window.UI && window.UI.updateUI) {
+    window.UI.updateUI(gameState, selectedDiceIndices)
+  } else {
+    console.error('UI module not loaded')
   }
 }
 
@@ -559,7 +602,23 @@ async function init() {
   // 立即初始化音频系统（不等待游戏开始）
   await initSoundManager()
 
-  initEventListeners()
+  // 显示游戏选项
+  showGameOptions()
+
+  // 绑定按钮事件
+  document.getElementById('btnStartGame').addEventListener('click', startGameFromOptions)
+  document.getElementById('btnCloseRules').addEventListener('click', closeRules)
+
+  // 其他按钮
+  document.getElementById('btnRollAgain').addEventListener('click', rollAgain)
+  document.getElementById('btnEndTurn').addEventListener('click', endTurn)
+  document.getElementById('btnNext').addEventListener('click', switchPlayer)
+  document.getElementById('btnNewGame').addEventListener('click', () => {
+    // 游戏结束后，显示选项界面重新开始
+    showGameOptions()
+  })
+  document.getElementById('btnRules').addEventListener('click', showRules)
+
   // 确保 UI 已加载
   if (window.UI && window.UI.updateUI) {
     window.UI.updateUI(gameState, selectedDiceIndices)

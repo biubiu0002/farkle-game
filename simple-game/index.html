@@ -76,12 +76,52 @@
     </div>
   </div>
 
+  <!-- 游戏选项弹窗 -->
+  <div class="modal" id="gameOptionsModal">
+    <div class="modal-content game-options-content">
+      <div class="modal-title">🎲 Farkle 游戏设置</div>
+      <div class="options-content">
+        <div class="option-section">
+          <div class="option-label">选择胜利分数</div>
+          <div class="score-options">
+            <label class="score-option">
+              <input type="radio" name="winningScore" value="1500">
+              <span class="score-value">1,500</span>
+              <span class="score-desc">快速游戏</span>
+            </label>
+            <label class="score-option">
+              <input type="radio" name="winningScore" value="3000">
+              <span class="score-value">3,000</span>
+              <span class="score-desc">短游戏</span>
+            </label>
+            <label class="score-option">
+              <input type="radio" name="winningScore" value="5000" checked>
+              <span class="score-value">5,000</span>
+              <span class="score-desc">标准</span>
+            </label>
+            <label class="score-option">
+              <input type="radio" name="winningScore" value="8000">
+              <span class="score-value">8,000</span>
+              <span class="score-desc">长游戏</span>
+            </label>
+            <label class="score-option">
+              <input type="radio" name="winningScore" value="10000">
+              <span class="score-value">10,000</span>
+              <span class="score-desc">经典</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btnStartGame">开始游戏</button>
+    </div>
+  </div>
+
   <!-- 规则弹窗 -->
   <div class="modal" id="rulesModal">
     <div class="modal-content">
       <div class="modal-title">游戏规则</div>
       <div class="rules-content">
-        <div class="rule-text">目标：先达到10,000分</div>
+        <div class="rule-text">目标：先达到设定的胜利分数</div>
         <div class="rule-text">每次摇骰子后，必须至少选择1个可计分的骰子</div>
         <div class="rule-text">选择骰子后有两个选项：</div>
         <div class="rule-sub">1. 继续摇：对剩余骰子重摇，如果Farkle则本轮分数丢失</div>
@@ -93,7 +133,7 @@
         <div class="rule-sub">四/五/六个相同 = 翻倍</div>
         <div class="rule-sub">小顺子(1-5) = 500, 小顺子(2-6) = 600, 大顺子(1-6) = 1500</div>
       </div>
-      <button class="btn btn-primary" onclick="document.getElementById('rulesModal').classList.remove('show')">关闭</button>
+      <button class="btn btn-primary" id="btnCloseRules">关闭</button>
     </div>
   </div>
 
