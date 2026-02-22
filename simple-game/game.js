@@ -12,8 +12,44 @@ let isAnimating = false  // 动画执行标志，防止并发点击
 
 // 初始化音效管理器
 async function initSoundManager() {
-  if (window.SoundManager && !window.SoundManager.isInitialized) {
-    await window.SoundManager.init()
+  try {
+    // 初始化 SoundManager
+    if (window.SoundManager && !window.SoundManager.isInitialized) {
+      await window.SoundManager.init()
+      console.log('SoundManager 初始化成功')
+    }
+
+    // 初始化 BGMManager（如果存在）
+    if (window.BGMManager) {
+      window.bgmManager = new window.BGMManager('墙洞bgm_1.mp4')
+      console.log('BGMManager 创建成功')
+    }
+
+    // 初始化音量控制面板（如果存在）
+    if (window.VolumeControlPanel) {
+      window.volumePanel = new window.VolumeControlPanel(
+        window.SoundManager,
+        window.bgmManager
+      )
+      console.log('VolumeControlPanel 创建成功')
+    }
+
+    // 添加用户交互监听器以启用自动播放
+    const enableAutoplay = () => {
+      if (window.bgmManager) {
+        window.bgmManager.enableAutoplay()
+        console.log('BGM 自动播放已启用')
+      }
+      // 移除监听器
+      document.removeEventListener('click', enableAutoplay)
+      document.removeEventListener('touchstart', enableAutoplay)
+    }
+
+    document.addEventListener('click', enableAutoplay)
+    document.addEventListener('touchstart', enableAutoplay)
+
+  } catch (error) {
+    console.error('初始化音频系统时出错:', error)
   }
 }
 
