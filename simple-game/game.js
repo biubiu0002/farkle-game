@@ -569,3 +569,22 @@ if (document.readyState === 'loading') {
 } else {
   init()
 }
+
+/**
+ * 清理音频资源
+ */
+function cleanupAudio() {
+  if (window.bgmManager) {
+    window.bgmManager.destroy()
+  }
+  if (window.SoundManager) {
+    window.SoundManager.destroy()
+  }
+  if (window.volumePanel) {
+    window.volumePanel.destroy()
+  }
+  console.log('音频资源已清理')
+}
+
+window.addEventListener('beforeunload', cleanupAudio)
+
