@@ -74,6 +74,9 @@ async function startGame() {
       gameState = window.GameLogic.startGame(gameState)
       selectedDiceIndices = []
       window.UI.updateUI(gameState, selectedDiceIndices)
+      // 恢复状态后返回
+      isAnimating = false
+      setAllButtonsEnabled(true)
       return
     }
 
@@ -134,6 +137,19 @@ async function startGame() {
   // 恢复动画标志和按钮状态
   isAnimating = false
   setAllButtonsEnabled(true)
+  } catch (error) {
+    console.error('开始游戏时出错:', error)
+    // 移除可能残留的骰子桶
+    const diceArea = document.getElementById('diceArea')
+    const diceBucket = diceArea?.querySelector('.dice-bucket')
+    if (diceBucket) {
+      diceArea.removeChild(diceBucket)
+    }
+  } finally {
+    // 确保无论成功还是失败都恢复状态
+    isAnimating = false
+    setAllButtonsEnabled(true)
+  }
 }
 
 /**
@@ -170,6 +186,9 @@ async function rollAgain() {
     gameState = window.GameLogic.rollAgain(gameState, selectedDiceIndices)
     selectedDiceIndices = []
     window.UI.updateUI(gameState, selectedDiceIndices)
+    // 恢复状态后返回
+    isAnimating = false
+    setAllButtonsEnabled(true)
     return
   }
 
@@ -265,6 +284,9 @@ async function endTurn() {
     if (!validation.valid) {
       gameState.message = validation.description || '无效的选择！请选择可计分的骰子'
       window.UI.updateUI(gameState, selectedDiceIndices)
+      // 恢复状态后返回
+      isAnimating = false
+      setAllButtonsEnabled(true)
       return
     }
 
@@ -278,6 +300,9 @@ async function endTurn() {
   if (totalScore === 0) {
     gameState.message = '必须选择骰子并保留后才能结束回合'
     window.UI.updateUI(gameState, selectedDiceIndices)
+    // 恢复状态后返回
+    isAnimating = false
+    setAllButtonsEnabled(true)
     return
   }
 
