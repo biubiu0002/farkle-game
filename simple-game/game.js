@@ -22,16 +22,18 @@ async function initSoundManager() {
     // 初始化 BGMManager（如果存在）
     if (window.BGMManager) {
       window.bgmManager = new window.BGMManager('墙洞bgm_1.mp4')
-      console.log('BGMManager 创建成功')
+      await window.bgmManager.init()
+      console.log('BGMManager 创建并初始化成功')
     }
 
     // 初始化音量控制面板（如果存在）
     if (window.VolumeControlPanel) {
       window.volumePanel = new window.VolumeControlPanel(
-        window.SoundManager,
-        window.bgmManager
+        window.bgmManager,
+        window.SoundManager
       )
-      console.log('VolumeControlPanel 创建成功')
+      window.volumePanel.init()
+      console.log('VolumeControlPanel 创建并初始化成功')
     }
 
     // 添加用户交互监听器以启用自动播放
