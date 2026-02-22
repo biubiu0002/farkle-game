@@ -3,7 +3,13 @@
  * 游戏状态管理，无 DOM 操作
  */
 
+// 使用全局胜利分数（可在游戏选项中设置）
 const WINNING_SCORE = 10000
+
+// 获取当前胜利分数
+function getWinningScore() {
+  return window.WINNING_SCORE || WINNING_SCORE
+}
 
 /**
  * 创建初始游戏状态
@@ -211,7 +217,7 @@ function endTurn(state, selectedIndices) {
   const newScore = currentPlayer.bankedScore + totalScore
 
   // 检查是否获胜
-  if (newScore >= WINNING_SCORE) {
+  if (newScore >= getWinningScore()) {
     const updatedPlayers = [...state.players]
     updatedPlayers[state.currentPlayer] = {
       ...currentPlayer,
@@ -331,7 +337,7 @@ function newGame() {
 // 导出为模块
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    WINNING_SCORE,
+    getWinningScore,
     createInitialState,
     rollDice,
     startGame,
@@ -342,7 +348,7 @@ if (typeof module !== 'undefined' && module.exports) {
   }
 } else {
   window.GameLogic = {
-    WINNING_SCORE,
+    getWinningScore,
     createInitialState,
     rollDice,
     startGame,
