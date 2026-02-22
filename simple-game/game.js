@@ -21,7 +21,10 @@ async function initSoundManager() {
 
     // 初始化 BGMManager（如果存在）
     if (window.BGMManager) {
-      window.bgmManager = new window.BGMManager('墙洞bgm_1.mp4')
+      window.bgmManager = new window.BGMManager([
+        '墙洞bgm_1.mp4',
+        '墙洞bgm_2.aac'  // 第二首 BGM
+      ])
       await window.bgmManager.init()
       console.log('BGMManager 创建并初始化成功')
     }
