@@ -35,9 +35,9 @@ async function initSoundManager() {
     }
 
     // 添加用户交互监听器以启用自动播放
-    const enableAutoplay = () => {
-      if (window.bgmManager) {
-        window.bgmManager.enableAutoplay()
+    const enableAutoplay = async () => {
+      if (window.bgmManager && window.bgmManager.enabled && !window.bgmManager.isPlaying) {
+        await window.bgmManager.play()
         console.log('BGM 自动播放已启用')
       }
       // 移除监听器
@@ -45,8 +45,8 @@ async function initSoundManager() {
       document.removeEventListener('touchstart', enableAutoplay)
     }
 
-    document.addEventListener('click', enableAutoplay)
-    document.addEventListener('touchstart', enableAutoplay)
+    document.addEventListener('click', enableAutoplay, { once: true })
+    document.addEventListener('touchstart', enableAutoplay, { once: true })
 
   } catch (error) {
     console.error('初始化音频系统时出错:', error)
