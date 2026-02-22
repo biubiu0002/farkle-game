@@ -10,6 +10,9 @@ class BGMManager {
     this.volume = 0.3  // 默认 30% 音量
     this.isPlaying = false
     this.initialized = false
+    // Store event listener references for cleanup
+    this.canPlayThroughHandler = null
+    this.errorHandler = null
   }
 
   /**
@@ -24,26 +27,23 @@ class BGMManager {
       this.audioElement.loop = true
       this.audioElement.volume = this.volume
 
-      // 监听加载事件
-      this.audioElement.addEventListener('canplaythrough', () => {
+      // Store listener references for cleanup
+      this.canPlayThroughHandler = () => {
         console.log('BGM 加载完成')
         this.initialized = true
-      })
+      }
 
-      // 监听错误事件
-      this.audioElement.addEventListener('error', (e) => {
+      this.errorHandler = (e) => {
         console.error('BGM 加载失败:', e)
         this.enabled = false
         this.initialized = false
-      })
+      }
 
-      // 监听播放结束（循环）
-      this.audioElement.addEventListener('ended', () => {
-        if (this.enabled && this.audioElement) {
-          this.audioElement.currentTime = 0
-          this.audioElement.play()
-        }
-      })
+      // 监听加载事件
+      this.audioElement.addEventListener('canplaythrough', this.canPlayThroughHandler)
+
+      // 监听错误事件
+      this.audioElement.addEventListener('error', this.errorHandler)
 
       // 预加载音频
       this.audioElement.load()
@@ -60,7 +60,7 @@ class BGMManager {
    * 开始播放
    */
   async play() {
-    if (!this.enabled || !this.audioElement) return
+    if (!this.enabled || !this.audioElement || !this.initialized) return
 
     try {
       await this.audioElement.play()
@@ -87,11 +87,11 @@ class BGMManager {
   /**
    * 切换播放/暂停
    */
-  toggle() {
+  async toggle() {
     if (this.isPlaying) {
       this.pause()
     } else {
-      this.play()
+      await this.play()
     }
   }
 
@@ -127,6 +127,18 @@ class BGMManager {
   destroy() {
     if (this.audioElement) {
       this.pause()
+
+      // Remove event listeners to prevent memory leaks
+      if (this.canPlayThroughHandler) {
+        this.audioElement.removeEventListener('canplaythrough', this.canPlayThroughHandler)
+        this.canPlayThroughHandler = null
+      }
+
+      if (this.errorHandler) {
+        this.audioElement.removeEventListener('error', this.errorHandler)
+        this.errorHandler = null
+      }
+
       this.audioElement.src = ''
       this.audioElement = null
     }
