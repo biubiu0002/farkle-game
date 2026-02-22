@@ -38,17 +38,12 @@ class VolumeControlPanel {
     // 事件处理器引用（用于正确移除监听器）
     this.handlers = {
       toggleClick: null,
-      toggleMouseEnter: null,
-      toggleMouseLeave: null,
       documentClick: null,
       bgmToggleChange: null,
       bgmSliderInput: null,
       sfxToggleChange: null,
       sfxSliderInput: null
     }
-
-    // 样式元素引用
-    this.styleElement = null
   }
 
   /**
@@ -71,77 +66,32 @@ class VolumeControlPanel {
    * 创建面板 DOM 元素
    */
   createPanel() {
-    // 创建切换按钮
-    this.toggleButton = document.createElement('button')
-    this.toggleButton.className = 'volume-toggle-btn'
-    this.toggleButton.innerHTML = this.getIcon('volume')
-    this.toggleButton.setAttribute('aria-label', 'Toggle volume controls')
-    this.toggleButton.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 1000;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border: none;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    `
-
     // 创建面板容器
     this.panel = document.createElement('div')
-    this.panel.className = 'volume-control-panel'
-    this.panel.style.cssText = `
-      position: fixed;
-      top: 80px;
-      right: 20px;
-      z-index: 999;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 15px;
-      padding: 20px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-      min-width: 280px;
-      transform: translateX(120%);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      opacity: 0;
-    `
+    this.panel.className = 'volume-panel collapsed'
 
-    // 创建面板标题
-    const title = document.createElement('h3')
-    title.textContent = '音量控制'
-    title.style.cssText = `
-      margin: 0 0 20px 0;
-      font-size: 18px;
-      font-weight: 600;
-      color: #333;
-      text-align: center;
-    `
-    this.panel.appendChild(title)
+    // 创建切换按钮
+    this.toggleButton = document.createElement('button')
+    this.toggleButton.className = 'panel-toggle'
+    this.toggleButton.innerHTML = '🔊'
+    this.toggleButton.type = 'button'
+
+    // 创建面板内容
+    const content = document.createElement('div')
+    content.className = 'panel-content'
 
     // 创建 BGM 控制组
-    this.createControlGroup('bgm', '背景音乐')
-
-    // 创建分隔线
-    const separator = document.createElement('div')
-    separator.style.cssText = `
-      height: 1px;
-      background: linear-gradient(90deg, transparent, #ddd, transparent);
-      margin: 20px 0;
-    `
-    this.panel.appendChild(separator)
+    const bgmGroup = this.createControlGroup('bgm', '背景音乐')
+    content.appendChild(bgmGroup)
 
     // 创建音效控制组
-    this.createControlGroup('sfx', '游戏音效')
+    const sfxGroup = this.createControlGroup('sfx', '游戏音效')
+    content.appendChild(sfxGroup)
+
+    this.panel.appendChild(this.toggleButton)
+    this.panel.appendChild(content)
 
     // 添加到页面
-    document.body.appendChild(this.toggleButton)
     document.body.appendChild(this.panel)
 
     // 绑定事件
@@ -153,224 +103,92 @@ class VolumeControlPanel {
    */
   createControlGroup(type, label) {
     const group = document.createElement('div')
-    group.className = `${type}-control-group`
-    group.style.cssText = `
-      margin-bottom: 15px;
-    `
+    group.className = 'control-group'
 
-    // 标签和开关
+    // 创建控制头部
     const header = document.createElement('div')
-    header.style.cssText = `
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    `
+    header.className = 'control-header'
 
-    const labelElement = document.createElement('label')
-    labelElement.textContent = label
-    labelElement.style.cssText = `
-      font-size: 14px;
-      font-weight: 500;
-      color: #555;
-    `
+    // 创建标签
+    const labelContainer = document.createElement('div')
+    labelContainer.className = 'control-label'
 
-    // 创建切换开关
-    const toggle = document.createElement('label')
-    toggle.className = `${type}-toggle`
-    toggle.style.cssText = `
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 26px;
-    `
+    const icon = document.createElement('span')
+    icon.className = 'control-icon'
+    icon.textContent = type === 'bgm' ? '🎵' : '🔔'
 
-    const toggleInput = document.createElement('input')
-    toggleInput.type = 'checkbox'
-    toggleInput.checked = this.settings[type].enabled
-    toggleInput.style.cssText = `
-      opacity: 0;
-      width: 0;
-      height: 0;
-    `
+    const labelText = document.createElement('span')
+    labelText.textContent = label
 
-    const toggleSlider = document.createElement('span')
-    toggleSlider.style.cssText = `
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: 0.4s;
-      border-radius: 26px;
-    `
+    labelContainer.appendChild(icon)
+    labelContainer.appendChild(labelText)
 
-    const toggleCircle = document.createElement('span')
-    toggleCircle.style.cssText = `
-      position: absolute;
-      content: '';
-      height: 20px;
-      width: 20px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: 0.4s;
-      border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    `
+    // 创建音量值显示
+    const valueDisplay = document.createElement('span')
+    valueDisplay.className = 'volume-value'
+    valueDisplay.textContent = `${Math.round(this.settings[type].volume * 100)}%`
+    valueDisplay.id = `${type}VolumeValue`
 
-    toggleSlider.appendChild(toggleCircle)
-    toggle.appendChild(toggleInput)
-    toggle.appendChild(toggleSlider)
-
-    header.appendChild(labelElement)
-    header.appendChild(toggle)
+    header.appendChild(labelContainer)
+    header.appendChild(valueDisplay)
     group.appendChild(header)
 
-    // 音量滑块
+    // 创建滑块容器
     const sliderContainer = document.createElement('div')
-    sliderContainer.style.cssText = `
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    `
+    sliderContainer.className = 'volume-slider-container'
 
+    // 创建音量滑块
     const slider = document.createElement('input')
     slider.type = 'range'
     slider.min = '0'
     slider.max = '100'
     slider.value = this.settings[type].volume * 100
-    slider.className = `${type}-volume-slider`
-    slider.style.cssText = `
-      flex: 1;
-      height: 6px;
-      border-radius: 3px;
-      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-      outline: none;
-      -webkit-appearance: none;
-      appearance: none;
-    `
+    slider.className = 'volume-slider'
+    slider.id = `${type}VolumeSlider`
 
-    // 滑块样式（只创建一次）
-    if (!this.styleElement) {
-      this.styleElement = document.createElement('style')
-      this.styleElement.textContent = `
-        input[type=range]::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          background: white;
-          cursor: pointer;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-        }
-        input[type=range]::-moz-range-thumb {
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          background: white;
-          cursor: pointer;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-          border: none;
-        }
-      `
-      document.head.appendChild(this.styleElement)
-    }
+    // 创建启用/禁用开关
+    const toggleContainer = document.createElement('div')
+    toggleContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-top: 8px;'
 
-    const valueDisplay = document.createElement('span')
-    valueDisplay.className = `${type}-volume-value`
-    valueDisplay.textContent = `${Math.round(this.settings[type].volume * 100)}%`
-    valueDisplay.style.cssText = `
-      min-width: 45px;
-      text-align: right;
-      font-size: 13px;
-      color: #666;
-      font-weight: 500;
-    `
+    const toggleLabel = document.createElement('label')
+    toggleLabel.style.cssText = 'color: rgba(255, 255, 255, 0.9); font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;'
+
+    const toggleInput = document.createElement('input')
+    toggleInput.type = 'checkbox'
+    toggleInput.checked = this.settings[type].enabled
+    toggleInput.id = `${type}Enabled`
+    toggleInput.style.cssText = 'cursor: pointer;'
+
+    const toggleSpan = document.createElement('span')
+    toggleSpan.textContent = '启用'
+
+    toggleLabel.appendChild(toggleInput)
+    toggleLabel.appendChild(toggleSpan)
+    toggleContainer.appendChild(toggleLabel)
 
     sliderContainer.appendChild(slider)
-    sliderContainer.appendChild(valueDisplay)
     group.appendChild(sliderContainer)
-
-    this.panel.appendChild(group)
+    group.appendChild(toggleContainer)
 
     // 保存元素引用
     this.elements[`${type}Toggle`] = toggleInput
     this.elements[`${type}Slider`] = slider
     this.elements[`${type}Value`] = valueDisplay
 
-    // 切换开关事件 - 存储处理器引用
-    if (type === 'bgm') {
-      this.handlers.bgmToggleChange = (e) => {
-        this.updateBGMState(e.target.checked)
-        this.saveSettings()
-      }
-      toggleInput.addEventListener('change', this.handlers.bgmToggleChange)
-    } else {
-      this.handlers.sfxToggleChange = (e) => {
-        this.updateSFXState(e.target.checked)
-        this.saveSettings()
-      }
-      toggleInput.addEventListener('change', this.handlers.sfxToggleChange)
-    }
-
-    // 滑块事件 - 存储处理器引用
-    if (type === 'bgm') {
-      this.handlers.bgmSliderInput = (e) => {
-        const volume = e.target.value / 100
-        valueDisplay.textContent = `${e.target.value}%`
-
-        if (this.bgmManager) {
-          this.bgmManager.setVolume(volume)
-        }
-
-        this.settings.bgm.volume = volume
-        this.saveSettings()
-      }
-      slider.addEventListener('input', this.handlers.bgmSliderInput)
-    } else {
-      this.handlers.sfxSliderInput = (e) => {
-        const volume = e.target.value / 100
-        valueDisplay.textContent = `${e.target.value}%`
-
-        if (this.sfxManager) {
-          this.sfxManager.setVolume(volume)
-        }
-
-        this.settings.sfx.volume = volume
-        this.saveSettings()
-      }
-      slider.addEventListener('input', this.handlers.sfxSliderInput)
-    }
+    return group
   }
 
   /**
    * 绑定事件监听器
    */
   attachEventListeners() {
-    // 切换按钮点击事件 - 存储处理器引用
+    // 切换按钮点击事件
     this.handlers.toggleClick = () => {
       this.togglePanel()
     }
     this.toggleButton.addEventListener('click', this.handlers.toggleClick)
 
-    // 切换按钮悬停效果 - 存储处理器引用
-    this.handlers.toggleMouseEnter = () => {
-      this.toggleButton.style.transform = 'scale(1.1)'
-      this.toggleButton.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.4)'
-    }
-    this.toggleButton.addEventListener('mouseenter', this.handlers.toggleMouseEnter)
-
-    this.handlers.toggleMouseLeave = () => {
-      this.toggleButton.style.transform = 'scale(1)'
-      this.toggleButton.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.3)'
-    }
-    this.toggleButton.addEventListener('mouseleave', this.handlers.toggleMouseLeave)
-
-    // 点击外部关闭面板 - 存储处理器引用
+    // 点击外部关闭面板
     this.handlers.documentClick = (e) => {
       if (this.isExpanded &&
           !this.panel.contains(e.target) &&
@@ -379,6 +197,66 @@ class VolumeControlPanel {
       }
     }
     document.addEventListener('click', this.handlers.documentClick)
+
+    // BGM 控制事件
+    const bgmEnabled = document.getElementById('bgmEnabled')
+    const bgmSlider = document.getElementById('bgmVolumeSlider')
+
+    if (bgmEnabled) {
+      this.handlers.bgmToggleChange = (e) => {
+        this.updateBGMState(e.target.checked)
+        this.saveSettings()
+      }
+      bgmEnabled.addEventListener('change', this.handlers.bgmToggleChange)
+    }
+
+    if (bgmSlider) {
+      this.handlers.bgmSliderInput = (e) => {
+        const volume = e.target.value / 100
+        const valueDisplay = document.getElementById('bgmVolumeValue')
+        if (valueDisplay) {
+          valueDisplay.textContent = `${e.target.value}%`
+        }
+
+        if (this.bgmManager) {
+          this.bgmManager.setVolume(volume)
+        }
+
+        this.settings.bgm.volume = volume
+        this.saveSettings()
+      }
+      bgmSlider.addEventListener('input', this.handlers.bgmSliderInput)
+    }
+
+    // 音效控制事件
+    const sfxEnabled = document.getElementById('sfxEnabled')
+    const sfxSlider = document.getElementById('sfxVolumeSlider')
+
+    if (sfxEnabled) {
+      this.handlers.sfxToggleChange = (e) => {
+        this.updateSFXState(e.target.checked)
+        this.saveSettings()
+      }
+      sfxEnabled.addEventListener('change', this.handlers.sfxToggleChange)
+    }
+
+    if (sfxSlider) {
+      this.handlers.sfxSliderInput = (e) => {
+        const volume = e.target.value / 100
+        const valueDisplay = document.getElementById('sfxVolumeValue')
+        if (valueDisplay) {
+          valueDisplay.textContent = `${e.target.value}%`
+        }
+
+        if (this.sfxManager) {
+          this.sfxManager.setVolume(volume)
+        }
+
+        this.settings.sfx.volume = volume
+        this.saveSettings()
+      }
+      sfxSlider.addEventListener('input', this.handlers.sfxSliderInput)
+    }
   }
 
   /**
@@ -420,33 +298,24 @@ class VolumeControlPanel {
     this.settings.panelCollapsed = !this.isExpanded
 
     if (this.isExpanded) {
-      this.panel.style.transform = 'translateX(0)'
-      this.panel.style.opacity = '1'
+      this.panel.classList.remove('collapsed')
+      this.panel.classList.add('expanded')
     } else {
-      this.panel.style.transform = 'translateX(120%)'
-      this.panel.style.opacity = '0'
+      this.panel.classList.add('collapsed')
+      this.panel.classList.remove('expanded')
     }
 
+    this.toggleButton.textContent = this.getIcon()
     this.saveSettings()
   }
 
   /**
-   * 获取图标 SVG
+   * 获取图标
    */
-  getIcon(type) {
-    const icons = {
-      volume: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-        <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
-        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-      </svg>`,
-      mute: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-        <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
-        <line x1="23" y1="9" x2="17" y2="15"></line>
-        <line x1="17" y1="9" x2="23" y2="15"></line>
-      </svg>`
-    }
-
-    return icons[type] || icons.volume
+  getIcon() {
+    // 如果任何一个启用，显示音量图标，否则静音
+    const anyEnabled = this.settings.bgm.enabled || this.settings.sfx.enabled
+    return anyEnabled ? '🔊' : '🔇'
   }
 
   /**
@@ -486,12 +355,17 @@ class VolumeControlPanel {
     this.isExpanded = !this.settings.panelCollapsed
     if (this.panel) {
       if (this.isExpanded) {
-        this.panel.style.transform = 'translateX(0)'
-        this.panel.style.opacity = '1'
+        this.panel.classList.remove('collapsed')
+        this.panel.classList.add('expanded')
       } else {
-        this.panel.style.transform = 'translateX(120%)'
-        this.panel.style.opacity = '0'
+        this.panel.classList.add('collapsed')
+        this.panel.classList.remove('expanded')
       }
+    }
+
+    // 更新图标
+    if (this.toggleButton) {
+      this.toggleButton.textContent = this.getIcon()
     }
   }
 
@@ -540,24 +414,9 @@ class VolumeControlPanel {
    */
   destroy() {
     // 移除切换按钮的事件监听器
-    if (this.toggleButton) {
-      if (this.handlers.toggleClick) {
-        this.toggleButton.removeEventListener('click', this.handlers.toggleClick)
-        this.handlers.toggleClick = null
-      }
-      if (this.handlers.toggleMouseEnter) {
-        this.toggleButton.removeEventListener('mouseenter', this.handlers.toggleMouseEnter)
-        this.handlers.toggleMouseEnter = null
-      }
-      if (this.handlers.toggleMouseLeave) {
-        this.toggleButton.removeEventListener('mouseleave', this.handlers.toggleMouseLeave)
-        this.handlers.toggleMouseLeave = null
-      }
-
-      // 从 DOM 移除切换按钮
-      if (this.toggleButton.parentNode) {
-        this.toggleButton.parentNode.removeChild(this.toggleButton)
-      }
+    if (this.toggleButton && this.handlers.toggleClick) {
+      this.toggleButton.removeEventListener('click', this.handlers.toggleClick)
+      this.handlers.toggleClick = null
     }
 
     // 移除全局 document 点击监听器
@@ -592,15 +451,9 @@ class VolumeControlPanel {
       this.panel.parentNode.removeChild(this.panel)
     }
 
-    // 移除样式元素
-    if (this.styleElement && this.styleElement.parentNode) {
-      this.styleElement.parentNode.removeChild(this.styleElement)
-    }
-
     // 清理 DOM 元素引用
     this.panel = null
     this.toggleButton = null
-    this.styleElement = null
     this.elements = {
       bgmToggle: null,
       bgmSlider: null,
@@ -613,8 +466,6 @@ class VolumeControlPanel {
     // 清理事件处理器引用
     this.handlers = {
       toggleClick: null,
-      toggleMouseEnter: null,
-      toggleMouseLeave: null,
       documentClick: null,
       bgmToggleChange: null,
       bgmSliderInput: null,
