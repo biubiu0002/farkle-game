@@ -60,7 +60,7 @@ class BGMManager {
    * 开始播放
    */
   async play() {
-    if (!this.enabled || !this.audioElement || !this.initialized) return
+    if (!this.enabled || !this.audioElement) return
 
     try {
       await this.audioElement.play()

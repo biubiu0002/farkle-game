@@ -527,16 +527,13 @@ function showRules() {
  */
 function initEventListeners() {
   document.getElementById('btnStart').addEventListener('click', () => {
-    initSoundManager().then(startGame)
+    startGame()
   })
   document.getElementById('btnRollAgain').addEventListener('click', rollAgain)
   document.getElementById('btnEndTurn').addEventListener('click', endTurn)
   document.getElementById('btnNext').addEventListener('click', switchPlayer)
-  document.getElementById('btnNewGame').addEventListener('click', () => {
-    initSoundManager().then(newGame)
-  })
+  document.getElementById('btnNewGame').addEventListener('click', newGame)
   document.getElementById('btnRules').addEventListener('click', showRules)
-  document.getElementById('btnMute').addEventListener('click', toggleMute)
 }
 
 /**
@@ -555,7 +552,10 @@ function toggleMute() {
 /**
  * 初始化游戏
  */
-function init() {
+async function init() {
+  // 立即初始化音频系统（不等待游戏开始）
+  await initSoundManager()
+
   initEventListeners()
   // 确保 UI 已加载
   if (window.UI && window.UI.updateUI) {
