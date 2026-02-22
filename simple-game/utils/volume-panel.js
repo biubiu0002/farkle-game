@@ -12,12 +12,17 @@ class VolumeControlPanel {
     this.toggleButton = null
     this.isExpanded = false
 
-    // 设置
+    // 设置 - 使用嵌套结构
     this.settings = {
-      bgmEnabled: true,
-      bgmVolume: 0.3,
-      sfxEnabled: true,
-      sfxVolume: 0.2
+      bgm: {
+        enabled: true,
+        volume: 0.3
+      },
+      sfx: {
+        enabled: true,
+        volume: 0.2
+      },
+      panelCollapsed: true
     }
 
     // DOM 元素引用
@@ -167,7 +172,7 @@ class VolumeControlPanel {
 
     const toggleInput = document.createElement('input')
     toggleInput.type = 'checkbox'
-    toggleInput.checked = this.settings[`${type}Enabled`]
+    toggleInput.checked = this.settings[type].enabled
     toggleInput.style.cssText = `
       opacity: 0;
       width: 0;
@@ -221,7 +226,7 @@ class VolumeControlPanel {
     slider.type = 'range'
     slider.min = '0'
     slider.max = '100'
-    slider.value = this.settings[`${type}Volume`] * 100
+    slider.value = this.settings[type].volume * 100
     slider.className = `${type}-volume-slider`
     slider.style.cssText = `
       flex: 1;
@@ -260,7 +265,7 @@ class VolumeControlPanel {
 
     const valueDisplay = document.createElement('span')
     valueDisplay.className = `${type}-volume-value`
-    valueDisplay.textContent = `${Math.round(this.settings[`${type}Volume`] * 100)}%`
+    valueDisplay.textContent = `${Math.round(this.settings[type].volume * 100)}%`
     valueDisplay.style.cssText = `
       min-width: 45px;
       text-align: right;
@@ -305,7 +310,7 @@ class VolumeControlPanel {
         }
       }
 
-      this.settings[`${type}Volume`] = volume
+      this.settings[type].volume = volume
       this.saveSettings()
     })
   }
@@ -344,7 +349,7 @@ class VolumeControlPanel {
    * 更新 BGM 状态
    */
   updateBGMState(enabled) {
-    this.settings.bgmEnabled = enabled
+    this.settings.bgm.enabled = enabled
 
     if (this.bgmManager) {
       this.bgmManager.setEnabled(enabled)
@@ -362,7 +367,7 @@ class VolumeControlPanel {
    * 更新音效状态
    */
   updateSFXState(enabled) {
-    this.settings.sfxEnabled = enabled
+    this.settings.sfx.enabled = enabled
 
     if (this.sfxManager) {
       this.sfxManager.setEnabled(enabled)
@@ -376,6 +381,7 @@ class VolumeControlPanel {
    */
   togglePanel() {
     this.isExpanded = !this.isExpanded
+    this.settings.panelCollapsed = !this.isExpanded
 
     if (this.isExpanded) {
       this.panel.style.transform = 'translateX(0)'
@@ -384,6 +390,8 @@ class VolumeControlPanel {
       this.panel.style.transform = 'translateX(120%)'
       this.panel.style.opacity = '0'
     }
+
+    this.saveSettings()
   }
 
   /**
@@ -411,31 +419,43 @@ class VolumeControlPanel {
   applySettings() {
     // 应用 BGM 设置
     if (this.bgmManager) {
-      this.bgmManager.setEnabled(this.settings.bgmEnabled)
-      this.bgmManager.setVolume(this.settings.bgmVolume)
+      this.bgmManager.setEnabled(this.settings.bgm.enabled)
+      this.bgmManager.setVolume(this.settings.bgm.volume)
 
-      if (this.settings.bgmEnabled) {
+      if (this.settings.bgm.enabled) {
         this.bgmManager.play()
       }
     }
 
     // 应用音效设置
     if (this.sfxManager) {
-      this.sfxManager.setEnabled(this.settings.sfxEnabled)
-      this.sfxManager.setVolume(this.settings.sfxVolume)
+      this.sfxManager.setEnabled(this.settings.sfx.enabled)
+      this.sfxManager.setVolume(this.settings.sfx.volume)
     }
 
     // 更新 UI
     if (this.elements.bgmToggle) {
-      this.elements.bgmToggle.checked = this.settings.bgmEnabled
-      this.elements.bgmSlider.value = this.settings.bgmVolume * 100
-      this.elements.bgmValue.textContent = `${Math.round(this.settings.bgmVolume * 100)}%`
+      this.elements.bgmToggle.checked = this.settings.bgm.enabled
+      this.elements.bgmSlider.value = this.settings.bgm.volume * 100
+      this.elements.bgmValue.textContent = `${Math.round(this.settings.bgm.volume * 100)}%`
     }
 
     if (this.elements.sfxToggle) {
-      this.elements.sfxToggle.checked = this.settings.sfxEnabled
-      this.elements.sfxSlider.value = this.settings.sfxVolume * 100
-      this.elements.sfxValue.textContent = `${Math.round(this.settings.sfxVolume * 100)}%`
+      this.elements.sfxToggle.checked = this.settings.sfx.enabled
+      this.elements.sfxSlider.value = this.settings.sfx.volume * 100
+      this.elements.sfxValue.textContent = `${Math.round(this.settings.sfx.volume * 100)}%`
+    }
+
+    // 应用面板状态
+    this.isExpanded = !this.settings.panelCollapsed
+    if (this.panel) {
+      if (this.isExpanded) {
+        this.panel.style.transform = 'translateX(0)'
+        this.panel.style.opacity = '1'
+      } else {
+        this.panel.style.transform = 'translateX(120%)'
+        this.panel.style.opacity = '0'
+      }
     }
   }
 
@@ -444,7 +464,7 @@ class VolumeControlPanel {
    */
   saveSettings() {
     try {
-      localStorage.setItem('volumeControlSettings', JSON.stringify(this.settings))
+      localStorage.setItem('farkle_audio_settings', JSON.stringify(this.settings))
       console.log('音量设置已保存')
     } catch (error) {
       console.error('保存音量设置失败:', error)
@@ -456,10 +476,21 @@ class VolumeControlPanel {
    */
   loadSettings() {
     try {
-      const saved = localStorage.getItem('volumeControlSettings')
+      const saved = localStorage.getItem('farkle_audio_settings')
       if (saved) {
         const parsed = JSON.parse(saved)
-        this.settings = { ...this.settings, ...parsed }
+
+        // 合并嵌套结构
+        if (parsed.bgm) {
+          this.settings.bgm = { ...this.settings.bgm, ...parsed.bgm }
+        }
+        if (parsed.sfx) {
+          this.settings.sfx = { ...this.settings.sfx, ...parsed.sfx }
+        }
+        if (parsed.panelCollapsed !== undefined) {
+          this.settings.panelCollapsed = parsed.panelCollapsed
+        }
+
         console.log('音量设置已加载:', this.settings)
       }
     } catch (error) {
