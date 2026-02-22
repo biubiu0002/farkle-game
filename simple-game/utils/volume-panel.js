@@ -34,6 +34,21 @@ class VolumeControlPanel {
       sfxSlider: null,
       sfxValue: null
     }
+
+    // 事件处理器引用（用于正确移除监听器）
+    this.handlers = {
+      toggleClick: null,
+      toggleMouseEnter: null,
+      toggleMouseLeave: null,
+      documentClick: null,
+      bgmToggleChange: null,
+      bgmSliderInput: null,
+      sfxToggleChange: null,
+      sfxSliderInput: null
+    }
+
+    // 样式元素引用
+    this.styleElement = null
   }
 
   /**
@@ -238,30 +253,32 @@ class VolumeControlPanel {
       appearance: none;
     `
 
-    // 滑块样式
-    const style = document.createElement('style')
-    style.textContent = `
-      input[type=range]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: white;
-        cursor: pointer;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-      }
-      input[type=range]::-moz-range-thumb {
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: white;
-        cursor: pointer;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-        border: none;
-      }
-    `
-    document.head.appendChild(style)
+    // 滑块样式（只创建一次）
+    if (!this.styleElement) {
+      this.styleElement = document.createElement('style')
+      this.styleElement.textContent = `
+        input[type=range]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: white;
+          cursor: pointer;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+        input[type=range]::-moz-range-thumb {
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: white;
+          cursor: pointer;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+          border: none;
+        }
+      `
+      document.head.appendChild(this.styleElement)
+    }
 
     const valueDisplay = document.createElement('span')
     valueDisplay.className = `${type}-volume-value`
@@ -285,64 +302,83 @@ class VolumeControlPanel {
     this.elements[`${type}Slider`] = slider
     this.elements[`${type}Value`] = valueDisplay
 
-    // 切换开关事件
-    toggleInput.addEventListener('change', (e) => {
-      if (type === 'bgm') {
+    // 切换开关事件 - 存储处理器引用
+    if (type === 'bgm') {
+      this.handlers.bgmToggleChange = (e) => {
         this.updateBGMState(e.target.checked)
-      } else {
-        this.updateSFXState(e.target.checked)
+        this.saveSettings()
       }
-      this.saveSettings()
-    })
+      toggleInput.addEventListener('change', this.handlers.bgmToggleChange)
+    } else {
+      this.handlers.sfxToggleChange = (e) => {
+        this.updateSFXState(e.target.checked)
+        this.saveSettings()
+      }
+      toggleInput.addEventListener('change', this.handlers.sfxToggleChange)
+    }
 
-    // 滑块事件
-    slider.addEventListener('input', (e) => {
-      const volume = e.target.value / 100
-      valueDisplay.textContent = `${e.target.value}%`
+    // 滑块事件 - 存储处理器引用
+    if (type === 'bgm') {
+      this.handlers.bgmSliderInput = (e) => {
+        const volume = e.target.value / 100
+        valueDisplay.textContent = `${e.target.value}%`
 
-      if (type === 'bgm') {
         if (this.bgmManager) {
           this.bgmManager.setVolume(volume)
         }
-      } else {
+
+        this.settings.bgm.volume = volume
+        this.saveSettings()
+      }
+      slider.addEventListener('input', this.handlers.bgmSliderInput)
+    } else {
+      this.handlers.sfxSliderInput = (e) => {
+        const volume = e.target.value / 100
+        valueDisplay.textContent = `${e.target.value}%`
+
         if (this.sfxManager) {
           this.sfxManager.setVolume(volume)
         }
-      }
 
-      this.settings[type].volume = volume
-      this.saveSettings()
-    })
+        this.settings.sfx.volume = volume
+        this.saveSettings()
+      }
+      slider.addEventListener('input', this.handlers.sfxSliderInput)
+    }
   }
 
   /**
    * 绑定事件监听器
    */
   attachEventListeners() {
-    // 切换按钮点击事件
-    this.toggleButton.addEventListener('click', () => {
+    // 切换按钮点击事件 - 存储处理器引用
+    this.handlers.toggleClick = () => {
       this.togglePanel()
-    })
+    }
+    this.toggleButton.addEventListener('click', this.handlers.toggleClick)
 
-    // 切换按钮悬停效果
-    this.toggleButton.addEventListener('mouseenter', () => {
+    // 切换按钮悬停效果 - 存储处理器引用
+    this.handlers.toggleMouseEnter = () => {
       this.toggleButton.style.transform = 'scale(1.1)'
       this.toggleButton.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.4)'
-    })
+    }
+    this.toggleButton.addEventListener('mouseenter', this.handlers.toggleMouseEnter)
 
-    this.toggleButton.addEventListener('mouseleave', () => {
+    this.handlers.toggleMouseLeave = () => {
       this.toggleButton.style.transform = 'scale(1)'
       this.toggleButton.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.3)'
-    })
+    }
+    this.toggleButton.addEventListener('mouseleave', this.handlers.toggleMouseLeave)
 
-    // 点击外部关闭面板
-    document.addEventListener('click', (e) => {
+    // 点击外部关闭面板 - 存储处理器引用
+    this.handlers.documentClick = (e) => {
       if (this.isExpanded &&
           !this.panel.contains(e.target) &&
           !this.toggleButton.contains(e.target)) {
         this.togglePanel()
       }
-    })
+    }
+    document.addEventListener('click', this.handlers.documentClick)
   }
 
   /**
@@ -503,19 +539,68 @@ class VolumeControlPanel {
    * 销毁面板
    */
   destroy() {
-    // 移除事件监听器
+    // 移除切换按钮的事件监听器
     if (this.toggleButton) {
-      this.toggleButton.removeEventListener('click', this.togglePanel)
-      document.body.removeChild(this.toggleButton)
+      if (this.handlers.toggleClick) {
+        this.toggleButton.removeEventListener('click', this.handlers.toggleClick)
+        this.handlers.toggleClick = null
+      }
+      if (this.handlers.toggleMouseEnter) {
+        this.toggleButton.removeEventListener('mouseenter', this.handlers.toggleMouseEnter)
+        this.handlers.toggleMouseEnter = null
+      }
+      if (this.handlers.toggleMouseLeave) {
+        this.toggleButton.removeEventListener('mouseleave', this.handlers.toggleMouseLeave)
+        this.handlers.toggleMouseLeave = null
+      }
+
+      // 从 DOM 移除切换按钮
+      if (this.toggleButton.parentNode) {
+        this.toggleButton.parentNode.removeChild(this.toggleButton)
+      }
     }
 
-    if (this.panel) {
-      document.body.removeChild(this.panel)
+    // 移除全局 document 点击监听器
+    if (this.handlers.documentClick) {
+      document.removeEventListener('click', this.handlers.documentClick)
+      this.handlers.documentClick = null
     }
 
-    // 清理引用
+    // 移除控制组的事件监听器
+    if (this.elements.bgmToggle && this.handlers.bgmToggleChange) {
+      this.elements.bgmToggle.removeEventListener('change', this.handlers.bgmToggleChange)
+      this.handlers.bgmToggleChange = null
+    }
+
+    if (this.elements.bgmSlider && this.handlers.bgmSliderInput) {
+      this.elements.bgmSlider.removeEventListener('input', this.handlers.bgmSliderInput)
+      this.handlers.bgmSliderInput = null
+    }
+
+    if (this.elements.sfxToggle && this.handlers.sfxToggleChange) {
+      this.elements.sfxToggle.removeEventListener('change', this.handlers.sfxToggleChange)
+      this.handlers.sfxToggleChange = null
+    }
+
+    if (this.elements.sfxSlider && this.handlers.sfxSliderInput) {
+      this.elements.sfxSlider.removeEventListener('input', this.handlers.sfxSliderInput)
+      this.handlers.sfxSliderInput = null
+    }
+
+    // 从 DOM 移除面板
+    if (this.panel && this.panel.parentNode) {
+      this.panel.parentNode.removeChild(this.panel)
+    }
+
+    // 移除样式元素
+    if (this.styleElement && this.styleElement.parentNode) {
+      this.styleElement.parentNode.removeChild(this.styleElement)
+    }
+
+    // 清理 DOM 元素引用
     this.panel = null
     this.toggleButton = null
+    this.styleElement = null
     this.elements = {
       bgmToggle: null,
       bgmSlider: null,
@@ -524,6 +609,22 @@ class VolumeControlPanel {
       sfxSlider: null,
       sfxValue: null
     }
+
+    // 清理事件处理器引用
+    this.handlers = {
+      toggleClick: null,
+      toggleMouseEnter: null,
+      toggleMouseLeave: null,
+      documentClick: null,
+      bgmToggleChange: null,
+      bgmSliderInput: null,
+      sfxToggleChange: null,
+      sfxSliderInput: null
+    }
+
+    // 清理管理器引用
+    this.bgmManager = null
+    this.sfxManager = null
 
     console.log('VolumeControlPanel 已销毁')
   }
