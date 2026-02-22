@@ -33,26 +33,26 @@ body {
 
 .container {
   background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
-  border: 12px solid #5d4037;
-  border-radius: 20px;
-  padding: 32px;
-  max-width: 840px;
+  border: 10px solid #5d4037;
+  border-radius: 16px;
+  padding: 20px 24px;
+  max-width: 700px;
   width: 100%;
   box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.5),
     inset 0 0 20px rgba(0, 0, 0, 0.2);
 }
 
-/* 得分表格 */
+/* 得分表格 - 缩小版 */
 .scores-table {
-  margin-bottom: 24px;
-  padding: 20px;
+  margin-bottom: 12px;
+  padding: 10px 15px;
   background: #1b5e20;
   background-image:
     radial-gradient(circle at 30% 30%, rgba(255,255,255,0.08) 0%, transparent 50%),
     radial-gradient(circle at 70% 70%, rgba(0,0,0,0.15) 0%, transparent 50%);
-  border-radius: 16px;
-  border: 3px solid #4e342e;
+  border-radius: 12px;
+  border: 2px solid #4e342e;
   box-shadow:
     inset 0 2px 8px rgba(0,0,0,0.4),
     0 4px 12px rgba(0,0,0,0.3);
@@ -64,18 +64,18 @@ body {
 }
 
 .scores-table th {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
-  padding: 12px;
+  padding: 6px 8px;
   text-align: center;
   color: #4b5563;
   border-bottom: 2px solid rgba(102, 126, 234, 0.2);
 }
 
 .scores-table td {
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 800;
-  padding: 16px 12px;
+  padding: 8px 6px;
   text-align: center;
   border-bottom: 1px solid rgba(102, 126, 234, 0.1);
 }
@@ -115,15 +115,15 @@ body {
   border-radius: 0 0 12px 12px;
 }
 
-/* 消息区域 */
+/* 消息区域 - 缩小版 */
 .message {
   text-align: center;
-  font-size: 16px;
+  font-size: 14px;
   color: #4b5563;
-  margin-bottom: 20px;
-  padding: 15px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
   background: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
 /* 骰子区域 */
@@ -134,26 +134,354 @@ body {
     radial-gradient(circle at 30% 70%, rgba(0,0,0,0.1) 0%, transparent 50%),
     radial-gradient(circle at 70% 80%, rgba(0,0,0,0.1) 0%, transparent 50%);
   border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
-  min-height: 200px;
+  padding: 15px;
+  margin-bottom: 15px;
+  min-height: 280px;
   border: 2px solid #1b5e20;
   box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 骰子桶容器 - 动画时使用 */
+.dice-bucket {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 140px;
+  height: 180px;
+  z-index: 10;
+}
+
+/* 骰子桶主体 */
+.bucket {
+  position: relative;
+  width: 140px;
+  height: 160px;
+  z-index: 5;
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.6));  /* 整体阴影 */
+}
+
+/* 桶身 - 使用圆柱体效果 - 美化版 */
+.bucket-body {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 140px;
+  /* 丰富的木质纹理渐变 */
+  background:
+    /* 木纹效果 */
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 2px,
+      rgba(139, 69, 19, 0.1) 2px,
+      rgba(139, 69, 19, 0.1) 4px
+    ),
+    /* 主体渐变 */
+    linear-gradient(90deg,
+      #654321 0%,      /* 深褐色 */
+      #8B5A2B 15%,     /* 中褐色 */
+      #D2691E 30%,     /* 浅褐色 */
+      #DEB887 45%,     /* 木色 */
+      #F4A460 50%,     /* 亮木色（高光） */
+      #DEB887 55%,     /* 木色 */
+      #CD853F 70%,     /* 秘鲁色 */
+      #8B4513 85%,     /* 马鞍棕 */
+      #654321 100%     /* 深褐色 */
+    );
+  border-radius: 12px;
+  box-shadow:
+    /* 内阴影 - 增加深度 */
+    inset 0 -25px 50px rgba(0,0,0,0.5),
+    inset 0 25px 50px rgba(255,255,255,0.15),
+    inset -5px 0 15px rgba(0,0,0,0.2),
+    inset 5px 0 15px rgba(255,255,255,0.1),
+    /* 外阴影 - 立体感 */
+    0 15px 35px rgba(0,0,0,0.5),
+    0 5px 15px rgba(0,0,0,0.3);
+  overflow: hidden;
+  border: 2px solid #5D4037;  /* 深棕色边框 */
+}
+
+/* 添加高光效果 */
+.bucket-body::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 15%;
+  width: 15%;
+  height: 80%;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.2) 0%,
+    rgba(255,255,255,0.05) 50%,
+    transparent 100%
+  );
+  border-radius: 8px;
+  filter: blur(3px);
+}
+
+/* 桶的金属箍 - 美化版 */
+.bucket-band {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 18px;  /* 稍微加宽 */
+  /* 金属质感渐变 */
+  background: linear-gradient(90deg,
+    #2d2d2d 0%,      /* 深灰 */
+    #5a5a5a 10%,     /* 灰色 */
+    #b8b8b8 30%,     /* 银灰 */
+    #e8e8e8 50%,     /* 亮银（高光） */
+    #b8b8b8 70%,     /* 银灰 */
+    #5a5a5a 90%,     /* 灰色 */
+    #2d2d2d 100%     /* 深灰 */
+  );
+  box-shadow:
+    0 3px 6px rgba(0,0,0,0.4),      /* 外阴影 */
+    inset 0 1px 2px rgba(255,255,255,0.5),  /* 顶部高光 */
+    inset 0 -1px 2px rgba(0,0,0,0.3);     /* 底部阴影 */
+  border-top: 1px solid rgba(255,255,255,0.3);  /* 顶部亮边 */
+  border-bottom: 1px solid rgba(0,0,0,0.5);     /* 底部暗边 */
+}
+
+.bucket-band.top { top: 20px; }
+.bucket-band.bottom { bottom: 20px; }
+
+/* 桶口 - 椭圆形 - 美化版 */
+.bucket-rim {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 32px;
+  /* 金属质感的径向渐变 */
+  background:
+    /* 内圈深色 */
+    radial-gradient(ellipse at 40% 40%, #1a1a1a 0%, transparent 50%),
+    /* 主体渐变 */
+    radial-gradient(ellipse at center,
+      #1a1a1a 0%,
+      #3a3a3a 40%,
+      #5a5a5a 70%,
+      #7a7a7a 100%
+    );
+  border-radius: 50%;
+  box-shadow:
+    /* 内阴影 - 深度感 */
+    inset 0 6px 12px rgba(0,0,0,0.8),
+    inset 0 2px 4px rgba(0,0,0,0.6),
+    /* 外阴影 - 立体边缘 */
+    0 4px 8px rgba(0,0,0,0.5),
+    0 1px 2px rgba(0,0,0,0.3),
+    /* 顶部高光 */
+    inset 0 1px 2px rgba(255,255,255,0.15);
+  z-index: 10;  /* 桶口在最上层，遮挡骰子顶部 */
+  border: 2px solid #4a4a4a;  /* 边框增强 */
+}
+
+/* 桶口高光效果 */
+.bucket-rim::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 20%;
+  width: 60%;
+  height: 40%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.15) 50%,
+    transparent 100%
+  );
+  border-radius: 50%;
+  filter: blur(2px);
+}
+
+/* 桶内部（深色，表示内部空间）- 美化版 */
+.bucket-inner {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 108px;
+  height: 130px;
+  /* 深邃的内部渐变 */
+  background:
+    /* 顶部边缘光 */
+    linear-gradient(180deg,
+      rgba(60,60,60,0.8) 0%,
+      #000 15%,
+      #000 100%
+    ),
+    /* 底部反光 */
+    radial-gradient(ellipse at 50% 100%,
+      rgba(40,40,40,0.5) 0%,
+      transparent 60%
+    );
+  border-radius: 10px;
+  overflow: hidden;
+  z-index: 1;
+  box-shadow:
+    inset 0 8px 20px rgba(0,0,0,0.9),     /* 深度阴影 */
+    inset 0 2px 4px rgba(0,0,0,0.7),       /* 边缘阴影 */
+    0 0 20px rgba(0,0,0,0.3);             /* 外发光 */
+  border: 2px solid #2a2a2a;  /* 内边框 */
+}
+
+/* 骰子桶里的骰子容器 - 完全隐藏，只显示桶 */
+.bucket-inner .bucket-dice {
+  display: none;  /* 完全不显示桶里的骰子 */
+}
+
+/* 骰子被完全隐藏，不需要位置样式 */
+
+/* 骰子桶摇晃动画 */
+@keyframes bucket-shake {
+  0%, 100% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  5% {
+    transform: translate(-52%, -50%) rotate(-4deg);
+  }
+  10% {
+    transform: translate(-48%, -50%) rotate(4deg);
+  }
+  15% {
+    transform: translate(-51%, -50%) rotate(-3deg);
+  }
+  20% {
+    transform: translate(-49%, -50%) rotate(3deg);
+  }
+  25% {
+    transform: translate(-52%, -50%) rotate(-5deg);
+  }
+  30% {
+    transform: translate(-48%, -50%) rotate(5deg);
+  }
+  35% {
+    transform: translate(-51%, -50%) rotate(-3deg);
+  }
+  40% {
+    transform: translate(-49%, -50%) rotate(3deg);
+  }
+  45% {
+    transform: translate(-52%, -50%) rotate(-4deg);
+  }
+  50% {
+    transform: translate(-48%, -50%) rotate(4deg);
+  }
+  55% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  60% {
+    transform: translate(-52%, -50%) rotate(-3deg);
+  }
+  65% {
+    transform: translate(-48%, -50%) rotate(3deg);
+  }
+  70% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  75% {
+    transform: translate(-51%, -50%) rotate(-2deg);
+  }
+  80% {
+    transform: translate(-49%, -50%) rotate(2deg);
+  }
+  85% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  90% {
+    transform: translate(-52%, -50%) rotate(-3deg);
+  }
+  95% {
+    transform: translate(-48%, -50%) rotate(3deg);
+  }
+}
+
+/* 骰子桶里的骰子碰撞动画 */
+@keyframes dice-rattle {
+  0%, 100% {
+    transform: translate(0, 0) rotate(var(--base-rotation, 0deg));
+  }
+  25% {
+    transform: translate(-1px, 0px) rotate(calc(var(--base-rotation, 0deg) - 4deg));
+  }
+  50% {
+    transform: translate(1px, 0px) rotate(calc(var(--base-rotation, 0deg) + 4deg));
+  }
+  75% {
+    transform: translate(-0px, 1px) rotate(calc(var(--base-rotation, 0deg) - 2deg));
+  }
+}
+
+/* 骰子弹跳出桶的动画 */
+@keyframes die-bounce {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.dice-bucket.shaking .bucket {
+  animation: bucket-shake 1.5s ease-in-out;
+}
+
+.dice-bucket.shaking .bucket-dice .die {
+  animation: dice-rattle 0.12s ease-in-out infinite;
+}
+
+/* 骰子散开时的最终位置（相对于骰子行） */
+.dice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
 }
 
 .dice-section {
-  margin-bottom: 20px;
+  flex: 1;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 确保骰子区域始终显示占位 */
+.dice-section {
+  display: flex !important;
+}
+
+.dice-section:empty::before {
+  content: '';
+  display: block;
+  min-height: 70px;
 }
 
 .section-label {
-  font-size: 14px;
-  color: #6b7280;
-  margin-bottom: 10px;
+  font-size: 13px;
+  color: #fff8e1;  /* 浅米色，在绿色背景上清晰可见 */
+  margin-bottom: 6px;
   display: block;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);  /* 添加阴影增强对比度 */
 }
 
 .selected-preview {
-  color: #3b82f6;
+  color: #ffe082;  /* 金黄色，突出显示 */
   font-weight: 600;
 }
 
@@ -172,20 +500,20 @@ body {
 /* 控制按钮 */
 .controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-wrap: nowrap;
+  gap: 8px;
   justify-content: center;
 }
 
 .btn {
-  padding: 15px 40px;
-  border-radius: 12px;
-  font-size: 16px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
   font-weight: bold;
   border: 2px solid #4e342e;
   cursor: pointer;
   transition: all 0.2s;
-  min-width: 150px;
+  min-width: 100px;
   background: linear-gradient(180deg, #8d6e63 0%, #6d4c41 100%);
   color: #fff8e1;
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
@@ -298,23 +626,39 @@ body {
 /* 响应式 */
 @media (max-width: 600px) {
   .container {
-    padding: 20px;
+    padding: 15px;
+  }
+
+  .scores-table th {
+    font-size: 12px;
+    padding: 4px 2px;
+  }
+
+  .scores-table td {
+    font-size: 16px;
+    padding: 6px 2px;
+  }
+
+  .dice-area {
+    min-height: 240px;
+    padding: 10px;
   }
 
   .die {
     width: 60px;
     height: 60px;
-    font-size: 24px;
   }
 
-  .scores-table th {
-    font-size: 14px;
-    padding: 8px 4px;
+  .die-pips-2d {
+    width: 46px;
+    height: 46px;
+    padding: 6px;
+    gap: 3px;
   }
 
-  .scores-table td {
-    font-size: 20px;
-    padding: 12px 4px;
+  .pip-2d {
+    width: 8px;
+    height: 8px;
   }
 }
 
@@ -330,6 +674,24 @@ body {
 }
 
 /* ===== 2D骰子样式（简化版）===== */
+
+/* 骰子占位符 - 动画时显示 */
+.die-placeholder {
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #fbbf24 0%, #f59e0b 100%);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: #78350f;
+  font-weight: bold;
+  border: 2px solid #d97706;
+}
 
 .die {
   width: 70px;

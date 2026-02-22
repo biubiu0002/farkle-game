@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>测试 Farkle</title>
+</head>
+<body>
+  <h1>Farkle 逻辑测试</h1>
+  <div id="output"></div>
+
+  <script src="utils/scorer.js"></script>
+  <script>
+    const testDice = [6, 6, 3, 4, 4, 2];
+    const output = document.getElementById('output');
+
+    output.innerHTML += `<h2>测试骰子: ${testDice.join(', ')}</h2>`;
+    output.innerHTML += `<p>预期结果: Farkle（无法计分）</p>`;
+
+    try {
+      const scores = window.Scorer.getPossibleScores(testDice);
+      output.innerHTML += `<h3>getPossibleScores 结果:</h3>`;
+      if (scores.length === 0) {
+        output.innerHTML += `<p style="color:green">✅ 返回空数组 (正确)</p>`;
+      } else {
+        output.innerHTML += `<p style="color:red">❌ 返回了 ${scores.length} 个得分组合 (错误):</p>`;
+        scores.forEach((s, i) => {
+          output.innerHTML += `<p>${i+1}. ${s.description} - ${s.points}分</p>`;
+        });
+      }
+
+      const isFarkle = window.Scorer.isFarkle(testDice);
+      output.innerHTML += `<h3>isFarkle 结果:</h3>`;
+      output.innerHTML += `<p>${isFarkle}</p>`;
+
+      if (isFarkle) {
+        output.innerHTML += `<h2 style="color:green">✅ 测试通过: 663442被正确识别为Farkle</h2>`;
+      } else {
+        output.innerHTML += `<h2 style="color:red">❌ 测试失败: 663442应该被识别为Farkle但返回false</h2>`;
+      }
+    } catch (e) {
+      output.innerHTML += `<p style="color:red">错误: ${e.message}</p>`;
+    }
+  </script>
+</body>
+</html>

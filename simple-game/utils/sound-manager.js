@@ -8,19 +8,19 @@ class SoundManager {
     this.audioContext = null
     this.sounds = {}
     this.enabled = true
-    this.volume = 0.7
+    this.volume = 0.2  // 进一步降低音量到0.2
     this.isInitialized = false
 
-    // 预定义的音效配置
+    // 预定义的音效配置 - 全部使用简单beep，更柔和
     this.soundConfigs = {
-      roll: { type: 'noise', duration: 0.3, frequency: 200, attack: 0.01, decay: 0.2 },
-      dice: { type: 'beep', frequency: 440, duration: 0.1, delay: 0.05 },
-      select: { type: 'beep', frequency: 600, duration: 0.08, delay: 0.02 },
-      deselect: { type: 'beep', frequency: 300, duration: 0.08, delay: 0.02 },
-      score: { type: 'chime', frequency: 800, duration: 0.3, delay: 0.1 },
-      farkle: { type: 'buzz', frequency: 150, duration: 0.5, delay: 0.1 },
-      bank: { type: 'success', frequency: 1000, duration: 0.2, delay: 0.05 },
-      win: { type: 'victory', frequency: 1200, duration: 0.5, delay: 0.2 }
+      roll: { type: 'noise', duration: 1.2, frequency: 800, attack: 0.01, decay: 1.19 },
+      dice: { type: 'beep', frequency: 330, duration: 0.08, delay: 0 },       // E4，骰子落地 - 低沉柔和
+      select: { type: 'beep', frequency: 659, duration: 0.04, delay: 0 },
+      deselect: { type: 'beep', frequency: 440, duration: 0.04, delay: 0 },
+      score: { type: 'beep', frequency: 698, duration: 0.05, delay: 0 },      // F5，柔和
+      farkle: { type: 'beep', frequency: 196, duration: 0.2, delay: 0 },      // G3，低沉
+      bank: { type: 'beep', frequency: 784, duration: 0.05, delay: 0 },       // G5，清脆短促
+      win: { type: 'beep', frequency: 880, duration: 0.1, delay: 0 }          // A5，胜利
     }
   }
 
@@ -119,126 +119,162 @@ class SoundManager {
   }
 
   /**
-   * 创建噪音音效（摇骰子）
+   * 创建噪音音效（摇骰子）- 使用白噪声模拟骰子碰撞
    */
   createNoiseSound(oscillator, gainNode, config) {
-    oscillator.type = 'sawtooth'
-    oscillator.frequency.setValueAtTime(config.frequency, this.audioContext.currentTime)
+    // 创建白噪声缓冲区
+    const bufferSize = this.audioContext.sampleRate * config.duration
+    const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate)
+    const data = buffer.getChannelData(0)
 
-    // 创建音量包络
-    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime)
-    gainNode.gain.linearRampToValueAtTime(this.volume, this.audioContext.currentTime + config.attack)
-    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + config.attack + config.decay)
+    // 生成白噪声
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1
+    }
 
-    // 设置播放时间
-    oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + config.duration)
+    // 创建噪声源
+    const noiseSource = this.audioContext.createBufferSource()
+    noiseSource.buffer = buffer
+
+    // 创建滤波器（模拟骰子在桶里的声音）
+    const filter = this.audioContext.createBiquadFilter()
+    filter.type = 'bandpass'
+    filter.frequency.value = config.frequency
+    filter.Q.value = 0.5  // 降低Q值，让声音更柔和（从1改为0.5）
+
+    // 创建新的gain节点
+    const noiseGainNode = this.audioContext.createGain()
+
+    // 连接节点
+    noiseSource.connect(filter)
+    filter.connect(noiseGainNode)
+    noiseGainNode.connect(this.audioContext.destination)
+
+    // 创建音量包络 - 快速起音快速衰减（沙沙声）
+    noiseGainNode.gain.setValueAtTime(0, this.audioContext.currentTime)
+    noiseGainNode.gain.linearRampToValueAtTime(this.volume * 0.3, this.audioContext.currentTime + 0.02)
+    noiseGainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + config.duration)
+
+    // 播放噪声
+    noiseSource.start(this.audioContext.currentTime)
+    noiseSource.stop(this.audioContext.currentTime + config.duration)
   }
 
   /**
-   * 创建蜂鸣音效
+   * 创建蜂鸣音效 - 更柔和自然的版本
    */
   createBeepSound(oscillator, gainNode, config) {
     oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(config.frequency, this.audioContext.currentTime)
 
-    // 音量包络
-    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime + config.delay)
-    gainNode.gain.linearRampToValueAtTime(this.volume, this.audioContext.currentTime + config.delay + 0.01)
-    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + config.delay + config.duration)
+    const startTime = this.audioContext.currentTime + config.delay
+
+    // 设置初始频率并轻微滑落（让声音更自然）
+    oscillator.frequency.setValueAtTime(config.frequency, startTime)
+    oscillator.frequency.exponentialRampToValueAtTime(config.frequency * 0.85, startTime + config.duration)
+
+    // 骰子落地音效特殊处理 - 更低的峰值
+    const peakVolume = (config.frequency <= 350) ? this.volume * 0.15 : this.volume * 0.25
+
+    // 音量包络 - 非常柔和的起音和衰减
+    gainNode.gain.setValueAtTime(0, startTime)
+    gainNode.gain.linearRampToValueAtTime(peakVolume, startTime + 0.008)
+    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + config.duration)
 
     // 播放
     oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + config.delay + config.duration)
+    oscillator.stop(startTime + config.duration)
   }
 
   /**
-   * 创建铃声音效
+   * 创建铃声音效 - 柔和版
    */
   createChimeSound(oscillator, gainNode, config) {
     oscillator.type = 'sine'
 
-    // 频率上升
-    oscillator.frequency.setValueAtTime(config.frequency, this.audioContext.currentTime + config.delay)
-    oscillator.frequency.linearRampToValueAtTime(config.frequency * 1.5, this.audioContext.currentTime + config.delay + config.duration * 0.5)
-    oscillator.frequency.linearRampToValueAtTime(config.frequency, this.audioContext.currentTime + config.delay + config.duration)
+    const startTime = this.audioContext.currentTime + config.delay
 
-    // 音量包络
-    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime + config.delay)
-    gainNode.gain.linearRampToValueAtTime(this.volume * 0.5, this.audioContext.currentTime + config.delay + 0.05)
-    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + config.delay + config.duration)
+    // 频率轻微上升后滑落
+    oscillator.frequency.setValueAtTime(config.frequency, startTime)
+    oscillator.frequency.linearRampToValueAtTime(config.frequency * 1.2, startTime + config.duration * 0.3)
+    oscillator.frequency.exponentialRampToValueAtTime(config.frequency * 0.9, startTime + config.duration)
+
+    // 音量包络 - 柔和的铃声
+    gainNode.gain.setValueAtTime(0, startTime)
+    gainNode.gain.linearRampToValueAtTime(this.volume * 0.2, startTime + 0.02)
+    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + config.duration)
 
     oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + config.delay + config.duration)
+    oscillator.stop(startTime + config.duration)
   }
 
   /**
-   * 创建嗡嗡音效（Farkle失败）
+   * 创建嗡嗡音效（Farkle失败）- 更柔和版
    */
   createBuzzSound(oscillator, gainNode, config) {
-    oscillator.type = 'sawtooth'
-    oscillator.frequency.setValueAtTime(config.frequency, this.audioContext.currentTime + config.delay)
+    oscillator.type = 'sine'  // 使用sine，最柔和
+
+    const startTime = this.audioContext.currentTime + config.delay
 
     // 频率下降
-    oscillator.frequency.exponentialRampToValueAtTime(config.frequency * 0.7, this.audioContext.currentTime + config.delay + config.duration)
+    oscillator.frequency.setValueAtTime(config.frequency, startTime)
+    oscillator.frequency.exponentialRampToValueAtTime(config.frequency * 0.6, startTime + config.duration)
 
-    // 音量包络
-    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime + config.delay)
-    gainNode.gain.linearRampToValueAtTime(this.volume * 0.3, this.audioContext.currentTime + config.delay + 0.1)
-    gainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + config.delay + config.duration)
+    // 音量包络 - 非常柔和的低音
+    gainNode.gain.setValueAtTime(0, startTime)
+    gainNode.gain.linearRampToValueAtTime(this.volume * 0.15, startTime + 0.05)
+    gainNode.gain.linearRampToValueAtTime(0, startTime + config.duration)
 
     oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + config.delay + config.duration)
+    oscillator.stop(startTime + config.duration)
   }
 
   /**
-   * 创建成功音效
+   * 创建成功音效 - 双音柔和版
    */
   createSuccessSound(oscillator, gainNode, config) {
     oscillator.type = 'sine'
 
-    // 两个音符
-    const frequencies = [config.frequency, config.frequency * 1.2, config.frequency]
-    const durations = [config.duration * 0.3, config.duration * 0.3, config.duration * 0.4]
-    let currentTime = this.audioContext.currentTime + config.delay
+    const startTime = this.audioContext.currentTime + config.delay
 
-    frequencies.forEach((freq, i) => {
-      oscillator.frequency.setValueAtTime(freq, currentTime)
-      currentTime += durations[i]
-    })
+    // 两个音符的音高
+    oscillator.frequency.setValueAtTime(config.frequency, startTime)
+    oscillator.frequency.setValueAtTime(config.frequency * 1.25, startTime + config.duration * 0.4)
 
     // 音量包络
-    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime + config.delay)
-    gainNode.gain.linearRampToValueAtTime(this.volume * 0.7, this.audioContext.currentTime + config.delay + 0.05)
-    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + config.delay + config.duration)
+    gainNode.gain.setValueAtTime(0, startTime)
+    gainNode.gain.linearRampToValueAtTime(this.volume * 0.25, startTime + 0.02)
+    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + config.duration)
 
     oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + config.delay + config.duration)
+    oscillator.stop(startTime + config.duration)
   }
 
   /**
-   * 创建胜利音效
+   * 创建胜利音效 - 柔和版
    */
   createVictorySound(oscillator, gainNode, config) {
     oscillator.type = 'sine'
 
-    // 音阶上升
-    const notes = [config.frequency, config.frequency * 1.25, config.frequency * 1.5, config.frequency * 2]
-    const noteDuration = config.duration / notes.length
-    let currentTime = this.audioContext.currentTime + config.delay
+    const startTime = this.audioContext.currentTime + config.delay
+    const noteDuration = config.duration / 4
 
-    notes.forEach(freq => {
+    // 音阶上升
+    const notes = [config.frequency, config.frequency * 1.2, config.frequency * 1.4, config.frequency * 1.6]
+    let currentTime = startTime
+
+    notes.forEach((freq, i) => {
       oscillator.frequency.setValueAtTime(freq, currentTime)
+      oscillator.frequency.exponentialRampToValueAtTime(freq * 0.95, currentTime + noteDuration - 0.01)
       currentTime += noteDuration
     })
 
     // 音量包络
-    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime + config.delay)
-    gainNode.gain.linearRampToValueAtTime(this.volume, this.audioContext.currentTime + config.delay + 0.1)
-    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + config.delay + config.duration)
+    gainNode.gain.setValueAtTime(0, startTime)
+    gainNode.gain.linearRampToValueAtTime(this.volume * 0.3, startTime + 0.05)
+    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + config.duration)
 
     oscillator.start(this.audioContext.currentTime)
-    oscillator.stop(this.audioContext.currentTime + config.delay + config.duration)
+    oscillator.stop(startTime + config.duration)
   }
 
   /**
@@ -248,47 +284,22 @@ class SoundManager {
     if (!this.enabled || !this.isInitialized) return
 
     try {
-      // 检查音效是否存在，不存在则创建
-      if (!this.sounds[soundName] && this.soundConfigs[soundName]) {
-        this.sounds[soundName] = await this.createSound(soundName, this.soundConfigs[soundName])
-      }
+      const config = this.soundConfigs[soundName]
+      if (!config) return
 
-      // 播放音效
-      if (this.sounds[soundName] && this.audioContext) {
-        const sound = this.sounds[soundName]
-
-        // 创建新的振荡器节点（不能重复使用已停止的节点）
+      // 根据音效类型播放
+      if (config.type === 'noise') {
+        // 噪声音效直接创建播放（不缓存）
+        this.createNoiseSound(null, null, config)
+      } else {
+        // 所有其他音效都使用简单的beep
         const oscillator = this.audioContext.createOscillator()
         const gainNode = this.audioContext.createGain()
 
         oscillator.connect(gainNode)
         gainNode.connect(this.audioContext.destination)
-        gainNode.gain.value = this.volume
 
-        // 根据配置播放音效
-        const config = sound.config
-        switch (config.type) {
-          case 'noise':
-            this.createNoiseSound(oscillator, gainNode, config)
-            break
-          case 'beep':
-            this.createBeepSound(oscillator, gainNode, config)
-            break
-          case 'chime':
-            this.createChimeSound(oscillator, gainNode, config)
-            break
-          case 'buzz':
-            this.createBuzzSound(oscillator, gainNode, config)
-            break
-          case 'success':
-            this.createSuccessSound(oscillator, gainNode, config)
-            break
-          case 'victory':
-            this.createVictorySound(oscillator, gainNode, config)
-            break
-          default:
-            this.createBeepSound(oscillator, gainNode, config)
-        }
+        this.createBeepSound(oscillator, gainNode, config)
       }
     } catch (error) {
       console.error(`播放音效 ${soundName} 失败:`, error)

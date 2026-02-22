@@ -108,18 +108,17 @@ function updateUI(gameState, selectedDiceIndices) {
   const heldSection = document.getElementById('heldSection')
   const remainingSection = document.getElementById('remainingSection')
 
+  // 始终显示区域，避免UI跳动
   if (gameState.heldDice.length > 0) {
-    heldSection.style.display = 'block'
     renderDice('heldDice', gameState.heldDice, true, selectedDiceIndices)
   } else {
-    heldSection.style.display = 'none'
+    document.getElementById('heldDice').innerHTML = ''
   }
 
   if (gameState.unheldDice.length > 0 && gameState.gamePhase === 'selecting') {
-    remainingSection.style.display = 'block'
     renderDice('remainingDice', gameState.unheldDice, false, selectedDiceIndices)
   } else {
-    remainingSection.style.display = 'none'
+    document.getElementById('remainingDice').innerHTML = ''
   }
 
   // 更新按钮显示
@@ -144,15 +143,30 @@ function updateUI(gameState, selectedDiceIndices) {
   const btnEndTurn = document.getElementById('btnEndTurn')
   if (gameState.gamePhase === 'selecting') {
     const totalScore = gameState.currentRoundScore + selectedScore
-    if (selectedDiceIndices.length > 0 && selectedScore > 0) {
-      btnEndTurn.textContent = `结束回合 (${totalScore}分)`
-      btnEndTurn.disabled = false
-    } else if (totalScore > 0) {
-      btnEndTurn.textContent = `结束回合 (${totalScore}分)`
-      btnEndTurn.disabled = false
+
+    // 检查是否选中了骰子
+    if (selectedDiceIndices.length > 0) {
+      // 有选中骰子
+      if (selectedScore > 0) {
+        // 选中有效，可以结束回合
+        btnEndTurn.textContent = `结束回合 (${totalScore}分)`
+        btnEndTurn.disabled = false
+      } else {
+        // 选中无效，禁用按钮
+        btnEndTurn.textContent = '结束回合（无效选择）'
+        btnEndTurn.disabled = true
+      }
     } else {
-      btnEndTurn.textContent = '结束回合 (0分)'
-      btnEndTurn.disabled = true
+      // 没有选中骰子
+      if (totalScore > 0) {
+        // 已有保留分数，可以结束回合
+        btnEndTurn.textContent = `结束回合 (${totalScore}分)`
+        btnEndTurn.disabled = false
+      } else {
+        // 没有分数，不能结束回合
+        btnEndTurn.textContent = '结束回合 (0分)'
+        btnEndTurn.disabled = true
+      }
     }
   }
 

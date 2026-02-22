@@ -242,6 +242,28 @@ function endTurn(state, selectedIndices) {
   const rawDice = rollDice(6)
   const rolledDiceWithIndex = rawDice.map((value, idx) => ({ value, index: idx }))
 
+  // 调试信息
+  console.log('🎲 endTurn - 新玩家摇出的骰子:', rawDice)
+  const farkleCheck = window.Scorer.isFarkle(rawDice)
+  console.log('🔍 endTurn - isFarkle结果:', farkleCheck)
+  const possibleScores = window.Scorer.getPossibleScores(rawDice)
+  console.log('📊 endTurn - getPossibleScores返回:', possibleScores)
+
+  // 检查新玩家的初始骰子是否Farkle
+  if (farkleCheck) {
+    return {
+      ...state,
+      players: updatedPlayers,
+      currentPlayer: nextPlayer,
+      gamePhase: 'farkle',
+      rolledDice: rolledDiceWithIndex,
+      heldDice: [],
+      unheldDice: rolledDiceWithIndex,
+      currentRoundScore: 0,
+      message: `${state.players[nextPlayer].name} 初始摇骰子 Farkle！骰子 ${rawDice.join(', ')} 无法计分`
+    }
+  }
+
   return {
     ...state,
     players: updatedPlayers,

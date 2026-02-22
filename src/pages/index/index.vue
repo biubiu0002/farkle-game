@@ -33,9 +33,9 @@
         </view>
       </view>
 
-      <text v-if="gameState.unheldDice.length > 0">请选择:</text>
+      <text v-if="gameState.rolledDice.length > 0">请选择:</text>
       <view class="dice-row">
-        <view v-for="die in gameState.unheldDice" :key="die.index"
+        <view v-for="die in gameState.rolledDice" :key="die.index"
               :class="['die-simple', { selected: isSelected(die.index) }]"
               @click="toggleDie(die.index)">
           <text>{{ die.value }}</text>
@@ -70,7 +70,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { GameState } from '@/types/game'
+import type { GameState, DieValue } from '@/types/game'
 import {
   createInitialState,
   startGame as startGameLogic,
@@ -119,10 +119,10 @@ function endTurn() {
   let totalScore = gameState.value.currentRoundScore
   if (selectedDiceIndices.value.length > 0) {
     const selectedValues = selectedDiceIndices.value.map(index => {
-      const die = gameState.value.unheldDice.find(d => d.index === index)
-      return die?.value || 0
-    })
-    const allDiceValues = gameState.value.unheldDice.map(d => d.value)
+      const die = gameState.value.rolledDice.find(d => d.index === index)
+      return die?.value ?? 1
+    }) as DieValue[]
+    const allDiceValues = gameState.value.rolledDice.map(d => d.value) as DieValue[]
     const validation = validateSelection(allDiceValues, selectedValues)
     if (!validation.valid) {
       gameState.value = { ...gameState.value, message: validation.description || '无效的选择！' }

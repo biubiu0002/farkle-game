@@ -8,6 +8,7 @@ console.log('Farkle游戏已加载 - 版本 v6.0 - 模块化重构')
 // 游戏状态
 let gameState = window.GameLogic.createInitialState()
 let selectedDiceIndices = []
+let isAnimating = false  // 动画执行标志，防止并发点击
 
 // 初始化音效管理器
 async function initSoundManager() {
@@ -47,18 +48,96 @@ function waitForAnimation(ms) {
 /**
  * 开始游戏
  */
-function startGame() {
+async function startGame() {
   if (!window.UI || !window.UI.updateUI) {
     console.error('UI module not available')
     return
   }
+
+  // 防止并发点击
+  if (isAnimating) {
+    console.log('动画执行中，忽略点击')
+    return
+  }
+  isAnimating = true
+
+  // 禁用所有按钮
+  setAllButtonsEnabled(false)
+
+  try {
+    // 获取骰子区域
+    const diceArea = document.getElementById('diceArea')
+    const remainingSection = document.getElementById('remainingSection')
+
+    if (!diceArea) {
+      // 如果找不到容器，直接执行逻辑
+      gameState = window.GameLogic.startGame(gameState)
+      selectedDiceIndices = []
+      window.UI.updateUI(gameState, selectedDiceIndices)
+      return
+    }
+
+    // 创建骰子桶并播放洗牌动画
+    const diceBucket = createDiceBucket()
+    diceArea.appendChild(diceBucket)
+
+  // 等待一下让骰子桶出现
+  await waitForAnimation(100)
+
+  // 播放骰子碰撞音效（摇晃时）
+  if (window.SoundManager) {
+    window.SoundManager.playRollSound()
+  }
+
+  // 开始摇晃动画
+  diceBucket.classList.add('shaking')
+
+  // 摇晃1.5秒
+  await waitForAnimation(1500)
+
+  // 停止摇晃
+  diceBucket.classList.remove('shaking')
+
+  // 等待一小段时间
+  await waitForAnimation(200)
+
+  // 移除骰子桶
+  diceArea.removeChild(diceBucket)
+
+  // 更新游戏状态
   gameState = window.GameLogic.startGame(gameState)
   selectedDiceIndices = []
+
+  // 显示骰子行并更新UI
   window.UI.updateUI(gameState, selectedDiceIndices)
+
+  // 对新骰子添加弹跳效果
+  const newDiceElements = document.querySelectorAll('#remainingDice .die, #heldDice .die')
+  newDiceElements.forEach((die, index) => {
+    die.style.animation = `die-bounce 0.3s ease-out ${index * 0.05}s`
+  })
+
+  // 播放落地音效
+  if (window.SoundManager) {
+    await waitForAnimation(200)
+    window.SoundManager.playDiceSound()
+  }
+
+  // 等待动画完成
+  await waitForAnimation(500)
+
+  // 清理动画
+  newDiceElements.forEach(die => {
+    die.style.animation = ''
+  })
+
+  // 恢复动画标志和按钮状态
+  isAnimating = false
+  setAllButtonsEnabled(true)
 }
 
 /**
- * 继续摇 - 简化版
+ * 继续摇 - 骰子桶摇晃动画
  */
 async function rollAgain() {
   if (gameState.gamePhase !== 'selecting') return
@@ -68,39 +147,110 @@ async function rollAgain() {
     return
   }
 
-  // 播放摇骰子音效
-  if (window.SoundManager) window.SoundManager.playRollSound()
+  // 防止并发点击
+  if (isAnimating) {
+    console.log('动画执行中，忽略点击')
+    return
+  }
+  isAnimating = true
 
-  // 简单的缩放动画
-  const diceElements = document.querySelectorAll('.dice-row .die')
+  // 禁用所有按钮
+  setAllButtonsEnabled(false)
 
-  diceElements.forEach(die => {
-    die.style.transform = 'scale(0.8)'
-  })
+  // 获取未选择的骰子数量（即将要摇的骰子）
+  const unheldCount = gameState.unheldDice.length - selectedDiceIndices.length
+  const diceToRoll = unheldCount === 0 ? 6 : unheldCount
 
-  await waitForAnimation(150)
+  // 获取骰子区域
+  const diceArea = document.getElementById('diceArea')
+  const remainingSection = document.getElementById('remainingSection')
 
-  diceElements.forEach(die => {
-    die.style.transform = 'scale(1.1)'
-  })
+  if (!diceArea || !remainingSection) {
+    // 如果找不到容器，直接执行逻辑
+    gameState = window.GameLogic.rollAgain(gameState, selectedDiceIndices)
+    selectedDiceIndices = []
+    window.UI.updateUI(gameState, selectedDiceIndices)
+    return
+  }
 
-  await waitForAnimation(150)
+  // 隐藏原来的骰子行
+  remainingSection.style.visibility = 'hidden'
 
-  diceElements.forEach(die => {
-    die.style.transform = 'scale(1)'
-  })
+  // 创建骰子桶并播放洗牌动画
+  const diceBucket = createDiceBucket()
+  diceArea.appendChild(diceBucket)
+
+  // 等待一下让骰子桶出现
+  await waitForAnimation(100)
+
+  // 播放骰子碰撞音效（摇晃时）
+  if (window.SoundManager) {
+    window.SoundManager.playRollSound()
+  }
+
+  // 开始摇晃动画
+  diceBucket.classList.add('shaking')
+
+  // 摇晃1.5秒（与CSS动画时长一致）
+  await waitForAnimation(1500)
+
+  // 停止摇晃
+  diceBucket.classList.remove('shaking')
+
+  // 等待一小段时间
+  await waitForAnimation(200)
+
+  // 移除骰子桶
+  diceArea.removeChild(diceBucket)
 
   // 更新游戏状态
   gameState = window.GameLogic.rollAgain(gameState, selectedDiceIndices)
   selectedDiceIndices = []
+
+  // 显示骰子行并更新UI
+  remainingSection.style.visibility = 'visible'
   window.UI.updateUI(gameState, selectedDiceIndices)
+
+  // 对新骰子添加弹跳效果
+  const newDiceElements = document.querySelectorAll('#remainingDice .die')
+  newDiceElements.forEach((die, index) => {
+    die.style.animation = `die-bounce 0.3s ease-out ${index * 0.05}s`
+  })
+
+  // 播放落地音效
+  if (window.SoundManager) {
+    await waitForAnimation(200)
+    window.SoundManager.playDiceSound()
+  }
+
+  // 等待动画完成
+  await waitForAnimation(500)
+
+  // 清理动画
+  newDiceElements.forEach(die => {
+    die.style.animation = ''
+  })
+
+  // 恢复动画标志和按钮状态
+  isAnimating = false
+  setAllButtonsEnabled(true)
 }
 
 /**
  * 结束回合
  */
-function endTurn() {
+async function endTurn() {
   if (gameState.gamePhase !== 'selecting') return
+
+  // 防止并发点击
+  if (isAnimating) {
+    console.log('动画执行中，忽略点击')
+    return
+  }
+  isAnimating = true
+
+  // 禁用所有按钮
+  setAllButtonsEnabled(false)
 
   let totalScore = gameState.currentRoundScore
 
@@ -134,9 +284,119 @@ function endTurn() {
   // 播放存分音效
   if (window.SoundManager) window.SoundManager.playBankSound()
 
+  // 隐藏当前骰子，准备洗牌动画
+  const remainingSection = document.getElementById('remainingSection')
+  const heldSection = document.getElementById('heldSection')
+  if (remainingSection) remainingSection.style.opacity = '0.5'
+  if (heldSection) heldSection.style.opacity = '0.5'
+
+  // 等待一小段时间
+  await waitForAnimation(300)
+
+  // 获取骰子区域
+  const diceArea = document.getElementById('diceArea')
+  if (diceArea) {
+    // 创建骰子桶并播放洗牌动画
+    const diceBucket = createDiceBucket()
+    diceArea.appendChild(diceBucket)
+
+    // 等待一下让骰子桶出现
+    await waitForAnimation(100)
+
+    // 播放摇骰子音效
+    if (window.SoundManager) {
+      window.SoundManager.playRollSound()
+    }
+
+    // 开始摇晃动画
+    diceBucket.classList.add('shaking')
+
+    // 摇晃1.5秒
+    await waitForAnimation(1500)
+
+    // 停止摇晃
+    diceBucket.classList.remove('shaking')
+
+    // 等待一小段时间
+    await waitForAnimation(200)
+
+    // 移除骰子桶
+    diceArea.removeChild(diceBucket)
+  }
+
+  // 更新游戏状态（切换玩家并摇骰子）
   gameState = window.GameLogic.endTurn(gameState, selectedDiceIndices)
   selectedDiceIndices = []
+
+  // 显示骰子行并更新UI
   window.UI.updateUI(gameState, selectedDiceIndices)
+
+  // 恢复透明度
+  if (remainingSection) remainingSection.style.opacity = '1'
+  if (heldSection) heldSection.style.opacity = '1'
+
+  // 对新骰子添加弹跳效果
+  const newDiceElements = document.querySelectorAll('#remainingDice .die')
+  newDiceElements.forEach((die, index) => {
+    die.style.animation = `die-bounce 0.3s ease-out ${index * 0.05}s`
+  })
+
+  // 播放落地音效
+  if (window.SoundManager) {
+    await waitForAnimation(200)
+    window.SoundManager.playDiceSound()
+  }
+
+  // 等待动画完成
+  await waitForAnimation(500)
+
+  // 清理动画
+  newDiceElements.forEach(die => {
+    die.style.animation = ''
+  })
+
+  // 恢复动画标志和按钮状态
+  isAnimating = false
+  setAllButtonsEnabled(true)
+}
+
+/**
+ * 创建骰子桶DOM结构
+ */
+function createDiceBucket() {
+  const diceBucket = document.createElement('div')
+  diceBucket.className = 'dice-bucket'
+
+  const bucket = document.createElement('div')
+  bucket.className = 'bucket'
+
+  const bucketBody = document.createElement('div')
+  bucketBody.className = 'bucket-body'
+
+  const bucketRim = document.createElement('div')
+  bucketRim.className = 'bucket-rim'
+
+  const bucketInner = document.createElement('div')
+  bucketInner.className = 'bucket-inner'
+
+  const bucketDice = document.createElement('div')
+  bucketDice.className = 'bucket-dice'
+
+  const topBand = document.createElement('div')
+  topBand.className = 'bucket-band top'
+
+  const bottomBand = document.createElement('div')
+  bottomBand.className = 'bucket-band bottom'
+
+  bucketInner.appendChild(bucketDice)
+  bucketBody.appendChild(bucketRim)
+  bucketBody.appendChild(bucketInner)
+  bucketBody.appendChild(topBand)
+  bucketBody.appendChild(bottomBand)
+  bucket.appendChild(bucketBody)
+  diceBucket.appendChild(bucket)
+
+  return diceBucket
 }
 
 /**
@@ -151,6 +411,36 @@ function switchPlayer() {
   gameState = window.GameLogic.switchPlayerAfterFarkle(gameState)
   selectedDiceIndices = []
   window.UI.updateUI(gameState, selectedDiceIndices)
+}
+
+/**
+ * 设置所有按钮的启用/禁用状态
+ */
+function setAllButtonsEnabled(enabled) {
+  const buttons = document.querySelectorAll('.controls .btn')
+  buttons.forEach(btn => {
+    if (enabled) {
+      // 恢复按钮的原始disabled状态
+      if (btn.id === 'btnStart') {
+        btn.disabled = (gameState.gamePhase !== 'waiting')
+      } else if (btn.id === 'btnRollAgain') {
+        btn.disabled = !(
+          gameState.gamePhase === 'selecting' &&
+          selectedDiceIndices.length > 0
+        )
+      } else if (btn.id === 'btnEndTurn') {
+        const totalScore = gameState.currentRoundScore
+        btn.disabled = (totalScore === 0)
+      } else if (btn.id === 'btnNext') {
+        btn.disabled = (gameState.gamePhase !== 'farkle')
+      } else if (btn.id === 'btnNewGame') {
+        btn.disabled = (gameState.gamePhase !== 'gameOver')
+      }
+    } else {
+      // 禁用所有按钮
+      btn.disabled = true
+    }
+  })
 }
 
 /**
